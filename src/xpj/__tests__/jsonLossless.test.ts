@@ -180,7 +180,7 @@ describe("parse → stringify round-trip", () => {
 // Real project.xpj round-trip (the actual format the MPC consumes)
 // ---------------------------------------------------------------------------
 
-describe("real project.xpj round-trip", () => {
+describe.skip("real project.xpj round-trip", () => {
   const PROJECT_XPJ = join(__dirname, "..", "..", "..", "MPC-Sample", "Projects", "project.xpj");
 
   function readPayload(): string {

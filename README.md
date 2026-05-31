@@ -1,21 +1,23 @@
 # MPC Sample
 
-Web + desktop Akai MPC sample drum machine with `.xpj` project export.
+A web and desktop app for managing Akai MPC sample projects and building drum kits. Load your existing MPC kits, preview samples on a familiar pad layout, rearrange and customize your pads, then export the result as a ready-to-use `.xpj` project file — drop it straight onto your MPC hardware or SD card and your kit is ready to play.
 
-Runs as a browser app (Vite dev server) or as a packaged desktop app (Electron). Load drum kits built from real Akai `.xpj` project files, sequence patterns, and export back to `.xpj` for playback on hardware.
+Runs as a browser app or as a packaged macOS desktop app (Electron). The desktop build adds native file dialogs for opening and saving `.xpj` files and direct SD card workflow support.
 
-**Package:** `@worldlinkstudio/mpcsample` — License: GPL-3.0
+![Demo of MPC Sample.app](./demo.jpg)
+
+For a live demo visit [mpcsample.app](mpcsample.app)
 
 ---
 
-## Prerequisites
+## Requirements
 
 - Node.js >= 18
 - npm
 
 ---
 
-## Installation
+## Setup
 
 ```bash
 git clone <repo-url>
@@ -23,118 +25,56 @@ cd mpcsample
 npm install
 ```
 
-After cloning, regenerate the kit assets (see [Kit Generation](#kit-generation)):
-
-```bash
-npm run build-kits
-```
-
 ---
 
-## Development
+## Running
 
-**Browser (Vite dev server, port 4404):**
+**Browser only (Vite, port 4404):**
 
 ```bash
 npm run dev
 ```
 
-**Electron (renderer on port 4406):**
+**Full Electron desktop app (renderer on port 4406):**
 
 ```bash
 npm run electron:dev
 ```
 
----
-
-## Scripts
-
-| Script                   | Description                                           |
-| ------------------------ | ----------------------------------------------------- |
-| `npm run dev`            | Start Vite dev server (browser, port 4404)            |
-| `npm run build`          | Build React library to `dist/`                        |
-| `npm run electron:dev`   | Start Electron in dev mode (renderer port 4406)       |
-| `npm run electron:build` | Build Electron app to `out/`                          |
-| `npm run electron:dist`  | Package distributable via electron-builder            |
-| `npm run build-kits`     | Regenerate `public/kits/` from `MPC-Sample/Projects/` |
-| `npm test`               | Run all tests (Vitest)                                |
-| `npm run typecheck`      | TypeScript type-check, no emit                        |
-| `npm run lint`           | Biome lint                                            |
-| `npm run format`         | Biome format (write)                                  |
-| `npm run check`          | Biome lint + format check                             |
-
----
-
-## Kit Generation
-
-Kit assets are not committed to the repository. They are generated from Akai project files stored locally in `MPC-Sample/` (also gitignored, ~300 MB of WAV samples).
-
-The `build-kits` script reads `.xpj` project files from `MPC-Sample/Projects/` and copies WAV samples into `public/kits/<id>/`, producing the kit manifests the app expects at runtime.
+**Package a distributable (macOS):**
 
 ```bash
-npm run build-kits
+npm run electron:dist
 ```
-
-Run this once after cloning, and again whenever `MPC-Sample/Projects/` changes. The `MPC-Sample/` directory is an irreplaceable build input — keep it on disk alongside the repo.
-
----
-
-## Project Structure
-
-```
-mpcsample/
-├── src/                  # React components, audio engine, Zustand state, xpj codec
-├── electron/             # Electron main process, preload script, fs operations
-├── scripts/              # build-kits.mjs and other build utilities
-├── public/kits/          # Generated kit manifests + WAVs (gitignored)
-├── MPC-Sample/           # Akai project files — gitignored, kept on disk
-├── index.html
-├── vite.config.ts
-├── electron.vite.config.ts
-├── electron-builder.yml
-└── biome.json
-```
-
----
-
-## Tech Stack
-
-- **React 19** + **TypeScript**
-- **Vite 6** (browser build) / **electron-vite** (Electron build)
-- **Electron 35**
-- **Zustand** — state management
-- **Web Audio API** / **Tone.js** — audio engine
-- **fflate** — zip compression (`.xpj` export)
-- **Tailwind CSS v4**
-- **Vitest** — unit tests
-- **Biome** — formatter + linter
 
 ---
 
 ## macOS Note
 
-The packaged app is unsigned. macOS will quarantine it after download or distribution. Remove the quarantine attribute before launching:
+The app is not code-signed or notarized. macOS Gatekeeper will block it from opening after download. There are two ways to get past this.
 
-**On the installed app:**
+### Easiest — right-click to open (one-time)
+
+1. Right-click (or Control-click) **MPC Sample.app**
+2. Choose **Open** from the context menu
+3. Click **Open** in the dialog that appears
+
+macOS remembers this decision; the app opens normally from then on.
+
+### Via Terminal — remove the quarantine flag
+
+If the right-click method doesn't work, or if you prefer the command line, remove the quarantine extended attribute directly.
+
+**On the `.app` after dragging it to `/Applications`:**
 
 ```bash
 xattr -dr com.apple.quarantine "/Applications/MPC Sample.app"
 ```
 
-**On an extracted `.app` before installing:**
+**On a freshly extracted `.app` before moving it:**
 
 ```bash
 xattr -cr "MPC Sample.app"
 ```
 
----
-
-## .xpj Format Note
-
-The `.xpj` file format stores sample filenames as a sequence of 4-byte IEEE 754 float tokens — not a string type. This matches the Akai firmware's internal serialization format and was confirmed by cross-referencing with a Python reference implementation (`make_xpj.py`). The codec in `src/xpj/` faithfully encodes and decodes this representation to ensure compatibility with MPC hardware.
-
----
-
-## License
-
-GPL-3.0 — see [LICENSE](LICENSE).
+Run either command once; no further steps are needed.

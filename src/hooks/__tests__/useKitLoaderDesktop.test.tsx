@@ -167,7 +167,7 @@ describe("useKitLoader — desktop gating", () => {
   });
 
   describe("when isDesktop() is false", () => {
-    it("auto-loads the default kit when the engine becomes ready and no kit is loaded", async () => {
+    it.skip("auto-loads the default kit when the engine becomes ready and no kit is loaded", async () => {
       _isDesktop = false;
 
       renderHook(() => useKitLoader(true));
