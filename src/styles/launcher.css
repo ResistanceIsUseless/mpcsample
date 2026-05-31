@@ -1,0 +1,170 @@
+/* Launcher modal — full-screen overlay shown at Electron startup */
+
+/* ── Overlay ─────────────────────────────────────────────────────────────── */
+
+.launcher-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+/* ── Dialog ──────────────────────────────────────────────────────────────── */
+
+.launcher-dialog {
+  background: #0d1724;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 32px 28px 28px;
+  min-width: 340px;
+  max-width: 440px;
+  width: 90vw;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+  color: #e7ecf6;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  outline: none; /* focus ring managed by inner buttons */
+}
+
+/* ── Heading ─────────────────────────────────────────────────────────────── */
+
+.launcher-heading {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #ffd200;
+  font-weight: 700;
+}
+
+.launcher-subhead {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #6e7b94;
+  letter-spacing: 0.03em;
+}
+
+/* ── Action buttons ──────────────────────────────────────────────────────── */
+
+.launcher-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.launcher-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 14px 16px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.05);
+  color: #cfd6e4;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background 0.13s ease,
+    border-color 0.13s ease;
+}
+
+.launcher-action-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.launcher-action-btn:focus-visible {
+  outline: 2px solid #ffd200;
+  outline-offset: 2px;
+}
+
+.launcher-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.launcher-action-btn.primary {
+  background: rgba(255, 210, 0, 0.1);
+  border-color: rgba(255, 210, 0, 0.3);
+  color: #ffd200;
+}
+
+.launcher-action-btn.primary:hover:not(:disabled) {
+  background: rgba(255, 210, 0, 0.18);
+  border-color: rgba(255, 210, 0, 0.5);
+}
+
+.launcher-btn-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.launcher-btn-hint {
+  font-size: 11px;
+  color: #6e7b94;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.launcher-action-btn.primary .launcher-btn-hint {
+  color: rgba(255, 210, 0, 0.65);
+}
+
+/* ── Loading state ───────────────────────────────────────────────────────── */
+
+.launcher-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #9aa3b8;
+  font-family: "JetBrains Mono", monospace;
+  padding: 4px 0;
+}
+
+.launcher-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 210, 0, 0.25);
+  border-top-color: #ffd200;
+  border-radius: 50%;
+  animation: launcher-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .launcher-spinner {
+    animation: none;
+    border-top-color: #ffd200;
+  }
+}
+
+@keyframes launcher-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Error alert ─────────────────────────────────────────────────────────── */
+
+.launcher-error {
+  font-size: 12px;
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.25);
+  border-radius: 4px;
+  padding: 10px 12px;
+  word-break: break-word;
+  line-height: 1.5;
+}

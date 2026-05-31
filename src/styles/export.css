@@ -1,0 +1,234 @@
+/* Export button and progress dialog styles */
+
+.export-btn {
+  background: rgba(255, 210, 0, 0.12);
+  color: #ffd200;
+  border: 1px solid rgba(255, 210, 0, 0.35);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: inherit;
+  cursor: pointer;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.export-btn:hover:not(:disabled) {
+  background: rgba(255, 210, 0, 0.22);
+  border-color: rgba(255, 210, 0, 0.6);
+}
+
+.export-btn:disabled,
+.export-btn[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.export-btn[aria-busy="true"] {
+  cursor: wait;
+}
+
+/* Spinner — pure CSS rotating ring */
+.export-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgba(255, 210, 0, 0.3);
+  border-top-color: #ffd200;
+  border-radius: 50%;
+  animation: export-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .export-spinner {
+    animation: none;
+    border-top-color: #ffd200;
+  }
+}
+
+@keyframes export-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Progress Dialog overlay ─────────────────────────────────────────── */
+
+.export-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.export-dialog {
+  background: #0d1724;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 20px 24px;
+  min-width: 280px;
+  max-width: 360px;
+  width: 90vw;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  color: #e7ecf6;
+  font-family: inherit;
+}
+
+.export-dialog h3 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ffd200;
+}
+
+.export-name-field {
+  margin: 0 0 14px;
+}
+
+.export-name-label {
+  display: block;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #7a8499;
+  margin-bottom: 5px;
+}
+
+.export-name-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+  padding: 6px 9px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: #e7ecf6;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.export-name-input::placeholder {
+  color: #4a5268;
+}
+
+.export-name-input:focus {
+  border-color: rgba(255, 210, 0, 0.5);
+}
+
+.export-progress-bar-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+.export-progress-bar-fill {
+  height: 100%;
+  background: #ffd200;
+  border-radius: 2px;
+  transition: width 0.2s ease;
+}
+
+.export-phase-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: #9aa3b8;
+  margin: 0 0 4px;
+}
+
+.export-count-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: #6e7b94;
+  margin: 0 0 12px;
+}
+
+.export-error-msg {
+  font-size: 12px;
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.25);
+  border-radius: 4px;
+  padding: 8px 10px;
+  margin: 8px 0 12px;
+  word-break: break-word;
+}
+
+.export-success-msg {
+  font-size: 12px;
+  color: #4ade80;
+  margin: 8px 0 12px;
+}
+
+.export-dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.export-dialog-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cfd6e4;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 5px 12px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.export-dialog-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.export-dialog-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.export-dialog-btn.primary {
+  background: rgba(255, 210, 0, 0.15);
+  color: #ffd200;
+  border-color: rgba(255, 210, 0, 0.35);
+}
+
+.export-dialog-btn.primary:hover:not(:disabled) {
+  background: rgba(255, 210, 0, 0.25);
+}
+
+.export-eject {
+  margin: 4px 0 0;
+}
+
+.export-eject-done {
+  font-size: 12px;
+  color: #4ade80;
+  margin: 4px 0 0;
+}
+
+.export-overlay--top-right {
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 16px;
+}
+
+.export-overlay--bottom-right {
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 16px;
+}

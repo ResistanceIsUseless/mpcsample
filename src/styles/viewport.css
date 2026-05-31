@@ -1,0 +1,159 @@
+/* ====== MPC VIEWPORT — pan/zoom surface ====== */
+
+.mpc-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  cursor: default;
+  /* Prevent text selection while dragging */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mpc-viewport.is-dragging {
+  cursor: grabbing;
+}
+
+.mpc-stage {
+  /*
+   * The user transform (pan + zoom) is applied here via inline style.
+   * transform-origin is overridden per-instance but defaults to top center
+   * to match the existing .mpc chassis origin.
+   */
+  transform-origin: top center;
+  /* Smooth transitions for button-driven zoom/reset only. */
+  transition:
+    transform 0.2s ease;
+  will-change: transform;
+}
+
+/* Suppress transition during active drag or when reduced motion is requested */
+.mpc-viewport.is-dragging .mpc-stage,
+@media (prefers-reduced-motion: reduce) {
+  .mpc-stage {
+    transition: none;
+  }
+}
+
+/* Electron desktop: fixed natural dimensions + CSS zoom for resize scaling.
+   zoom shrinks both layout footprint and visual size together, so the body's
+   grid centering keeps the MPC centred regardless of window size. */
+body.is-electron .mpc-viewport {
+  width: 920px;
+  height: auto;
+  min-height: 0;
+  zoom: var(--mpc-scale, 1);
+}
+
+/*
+ * When the user has applied an explicit scale via the UI controls we add
+ * `.mpc-stage--scaled` to the viewport.  Inside this class the CSS media-query
+ * transform on `.mpc` must NOT fire (it would double-apply the scale).
+ * We neutralise it by overriding with scale(1).
+ */
+.mpc-stage--scaled .mpc {
+  transform: scale(1) !important;
+  margin-bottom: 0 !important;
+}
+
+/* Narrow-viewport fallback: when no user scale is active the existing media
+   query in chassis.css still applies inside .mpc-viewport. */
+
+/* ====== DRAG HANDLE ====== */
+
+.mpc-drag-handle {
+  position: absolute;
+  inset: 0;
+  /* Covers the full stage but sits behind interactive children */
+  z-index: 0;
+  cursor: grab;
+}
+
+.mpc-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* The MPC's own content must sit on top of the drag handle */
+.mpc-frame {
+  position: relative;
+  z-index: 1;
+}
+
+/* ====== ZOOM CONTROLS OVERLAY ====== */
+
+.zoom-controls {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(12, 15, 21, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 6px 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 100;
+  /* Prevent drag handle from capturing pointer events on these buttons */
+  pointer-events: auto;
+}
+
+.zoom-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e0ddd5;
+  font-size: 16px;
+  font-family: "Barlow Condensed", system-ui, sans-serif;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.zoom-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.zoom-btn:active {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.zoom-btn:focus-visible {
+  outline: 2px solid #ffd200;
+  outline-offset: 1px;
+}
+
+.zoom-readout {
+  min-width: 44px;
+  text-align: center;
+  font-family: "Barlow Condensed", system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #c8c4b8;
+}
+
+.zoom-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 0 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zoom-btn {
+    transition: none;
+  }
+}
