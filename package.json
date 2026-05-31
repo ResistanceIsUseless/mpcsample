@@ -6,21 +6,9 @@
   "type": "module",
   "comment:main": "Electron reads `main` as its entry point — it MUST be the built main-process file (out/main/index.js) so `electron-vite dev` and the packaged app run the app, not the library. Library consumers resolve via the `exports` map below (which takes precedence over `main`), and the library bundle stays at ./dist/index.js via `module`/`exports`.",
   "main": "./out/main/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    "./package.json": "./package.json",
-    ".": {
-      "development": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
-    }
-  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:web": "BUILD_TARGET=web vite build",
     "preview": "vite preview",
     "build-kits": "tsx scripts/build-kits.mjs",
     "electron:dev": "electron-vite dev",
