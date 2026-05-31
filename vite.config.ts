@@ -5,7 +5,7 @@ import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
 
 export default defineConfig(({ command }) => {
-  const isLibBuild = command === "build";
+  const isLibBuild = command === "build" && process.env.BUILD_TARGET !== "web";
 
   return {
     root: __dirname,
