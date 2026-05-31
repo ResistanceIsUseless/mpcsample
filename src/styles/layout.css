@@ -1,0 +1,604 @@
+/* ====== DISPLAY PANEL ======
+   Grid columns (left → right): logo / main-vol / screen / speaker.
+   .top-utils and the two banner labels are positioned absolute so they overlay
+   the grid (top-utils on the top edge of the panel; banners poking up onto the
+   cream chassis above the panel). */
+.display-panel {
+  position: relative;
+  height: 168px;
+  border-radius: 16px;
+  padding: 14px 18px;
+  background: linear-gradient(180deg, #18181c 0%, #0d0d10 50%, #060608 100%);
+  display: grid;
+  grid-template-columns: 100px 86px 1fr 150px;
+  gap: 14px;
+  align-items: center;
+  box-shadow:
+    inset 0 1px 0 #2a2a30,
+    inset 0 -1px 0 #000,
+    inset 0 0 0 1px #000,
+    0 2px 0 #fff8e6,
+    0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+.display-panel::after {
+  /* small mic-eye style detent on top edge, decorative */
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -9px;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 8px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #1a1a1d, #0a0a0c);
+  box-shadow: 0 1px 0 #fff8e6;
+}
+
+/* Logo area — col 1 */
+.logo-area {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding: 4px 0;
+}
+
+.akai-mark {
+  font-family: "Antonio", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 30px;
+  color: var(--red);
+  letter-spacing: 0.04em;
+  line-height: 0.9;
+  text-shadow:
+    0 1px 0 #5a0c0c,
+    0 -1px 0 #ff6a55;
+}
+
+.akai-mark .pro {
+  display: block;
+  font-family: "Barlow Condensed", system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  font-style: italic;
+  color: #b6b1a4;
+  text-transform: lowercase;
+  margin-top: 2px;
+  text-shadow: none;
+}
+
+.mpc-mark {
+  font-family: "Antonio", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--red);
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-shadow: 0 1px 0 #5a0c0c;
+}
+
+/* Top utility buttons — absolute, NOT in the grid flow.
+   Three small black buttons on the top edge of the display panel. */
+.top-utils {
+  position: absolute;
+  top: 8px;
+  left: 48%;
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  z-index: 2;
+}
+
+.top-util-btn {
+  width: 38px;
+  height: 18px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(180deg, #2a2a2e, #0c0c0e);
+  box-shadow:
+    inset 0 1px 0 #44444a,
+    inset 0 -1px 0 #000,
+    0 1px 0 #2a2a2e;
+  padding: 0;
+}
+
+.top-util-btn:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.6),
+    inset 0 -1px 0 #000;
+}
+
+.top-util-btn:focus-visible {
+  outline: 2px solid #4ed7ff;
+  outline-offset: 2px;
+}
+
+/* Main volume area — col 2 */
+.main-vol-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.main-vol-wrap .knob-name {
+  display: none; /* the explicit MAIN VOLUME label below replaces it */
+}
+
+.main-vol-label {
+  font-family: "Antonio", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 10px;
+  color: #9a978d;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Screen panel — col 3.
+   margin-top:18px gives clearance to the absolute .top-utils that floats
+   above this column on the display panel's top edge. */
+.screen {
+  position: relative;
+  height: 132px;
+  border-radius: 6px;
+  background: #06120e;
+  overflow: hidden;
+  margin-top: 18px;
+  box-shadow:
+    inset 0 0 0 2px #0e0e10,
+    inset 0 0 0 4px #1c1c20,
+    inset 0 0 24px rgba(214, 242, 74, 0.08),
+    0 0 0 1px #2a2a30;
+}
+
+.screen-inner {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: 18px 18px 1fr 16px;
+  padding: 4px 6px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--screen-fg);
+}
+
+.scr-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.scr-row.top {
+  justify-content: space-between;
+  font-size: 9px;
+  color: #7fc7b6;
+}
+
+.scr-bpm {
+  font-weight: 700;
+  color: #d6f24a;
+  margin-right: 2px;
+}
+
+.scr-tag {
+  background: #0f2a1f;
+  border: 1px solid #1d4534;
+  padding: 1px 5px;
+  border-radius: 2px;
+  color: #b6e856;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+.scr-tag.preset {
+  color: #d6f24a;
+  border-color: #2c5b46;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.scr-tag.preset.playing {
+  background: #2cc8f7;
+  border-color: #4ed7ff;
+  color: #001821;
+  box-shadow: 0 0 6px rgba(44, 200, 247, 0.6);
+}
+
+.scr-sample {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #d6f24a;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.scr-sample .badge {
+  background: #1a3a2c;
+  color: #9be0a8;
+  border: 1px solid #2c5b46;
+  padding: 0 4px;
+  border-radius: 2px;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
+.scr-pads {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.scr-pads > [class^="sp"] {
+  width: 11px;
+  height: 11px;
+  display: grid;
+  place-items: center;
+  background: #0c1f17;
+  border: 1px solid #2c5b46;
+  color: #9be0a8;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.scr-pads > .on {
+  background: #d6f24a;
+  color: #0a1410;
+  border-color: #d6f24a;
+}
+
+.scr-foot {
+  display: flex;
+  gap: 0;
+  border-top: 1px solid #1d4534;
+  padding-top: 2px;
+  color: #7fc7b6;
+  font-size: 9px;
+}
+
+.scr-foot > div {
+  flex: 1;
+  text-align: center;
+  border-right: 1px dashed #1d4534;
+}
+
+.scr-foot > div:last-child {
+  border-right: none;
+}
+
+.scr-foot > .active {
+  color: #0a1410;
+  background: #d6f24a;
+}
+
+/* Waveform — CRITICAL: parent must have explicit dimensions, otherwise the
+   canvas paints into a 0×0 box and the oscilloscope is invisible. */
+.waveform {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    transparent 49.5%,
+    #1d4534 49.5%,
+    #1d4534 50.5%,
+    transparent 50.5%
+  );
+}
+
+.waveform canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Speaker grille — col 4. Dot-pattern grille per prototype. */
+.speaker {
+  height: 100px;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 1px 1px, #444 1px, transparent 1.4px) 0 0 / 4px 4px,
+    linear-gradient(180deg, #0a0a0c, #1a1a1d);
+  box-shadow:
+    inset 0 0 0 1px #2a2a30,
+    inset 0 1px 0 #3a3a40,
+    inset 0 -1px 0 #000;
+}
+
+/* Banner labels — they "poke up" above the dark display panel onto the cream
+   chassis with chassis-colored background, like little tabs. */
+.mpc-banner,
+.mpc-banner-left {
+  position: absolute;
+  top: -16px;
+  font-family: "Antonio", system-ui, sans-serif;
+  font-weight: 700;
+  color: var(--red);
+  text-shadow: 0 1px 0 #5a0c0c;
+  background: var(--chassis);
+  padding: 0 6px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.mpc-banner {
+  right: 24px;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+}
+
+.mpc-banner-left {
+  left: 24px;
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  opacity: 0.85;
+  text-shadow: none;
+}
+
+/* ====== BODY GRID (3-col layout: left controls / center pads / right controls) ====== */
+.body-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr 132px;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 8px 6px 18px;
+  align-items: start;
+}
+
+.col-left {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.col-center {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.knob-row {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 0 8px 8px;
+  width: 100%;
+}
+
+/* ====== START OVERLAY (gates audio context — must be visible & clickable) ====== */
+.start-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 10, 14, 0.86);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  transition: opacity 220ms ease;
+  opacity: 1;
+  padding: 24px;
+}
+
+.start-overlay.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.start-card {
+  width: 100%;
+  max-width: 480px;
+  border-radius: 16px;
+  padding: 28px 32px 32px;
+  background: linear-gradient(
+    180deg,
+    #f4eeda 0%,
+    var(--chassis) 14%,
+    var(--chassis) 86%,
+    var(--chassis-2) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 #fffaee,
+    inset 0 -2px 0 rgba(0, 0, 0, 0.18),
+    inset 0 0 0 1px rgba(80, 70, 40, 0.18),
+    0 36px 80px rgba(0, 0, 0, 0.55);
+  text-align: center;
+  color: #2c2922;
+}
+
+.start-card h2 {
+  font-family: "Antonio", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 32px;
+  letter-spacing: 0.12em;
+  color: var(--red);
+  margin: 0 0 10px;
+}
+
+.start-card p {
+  font-family: "Barlow Condensed", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #4d4a40;
+  margin: 0 0 20px;
+}
+
+.start-card p b {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #2c2922;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.start-guide {
+  font-family: "Barlow Condensed", system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #4d4a40;
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.start-guide li {
+  padding-left: 14px;
+  position: relative;
+}
+
+.start-guide li::before {
+  content: "›";
+  position: absolute;
+  left: 0;
+  color: var(--red);
+  font-weight: 700;
+}
+
+.start-guide b {
+  font-weight: 700;
+  color: #2c2922;
+}
+
+.start-guide code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: #2c2922;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.start-card button {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font-family: "Antonio", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.18em;
+  color: #fff;
+  padding: 14px 36px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ff6a5a 0%, var(--red) 55%, var(--red-deep) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.25),
+    0 4px 0 var(--red-deep),
+    0 8px 16px rgba(155, 23, 21, 0.4);
+  transition:
+    transform 80ms,
+    box-shadow 80ms;
+  text-transform: uppercase;
+}
+
+.start-card button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.25),
+    0 6px 0 var(--red-deep),
+    0 10px 20px rgba(155, 23, 21, 0.5);
+}
+
+.start-card button:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    0 2px 0 var(--red-deep),
+    0 4px 8px rgba(155, 23, 21, 0.3);
+}
+
+.start-card button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+  transform: translateY(1px);
+}
+
+.start-card button:focus-visible {
+  outline: 3px solid #4ed7ff;
+  outline-offset: 3px;
+}
+
+/* ====== HUD (keyboard shortcuts + MIDI state, fixed bottom-left) ====== */
+.hud {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(15, 22, 35, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cfd6e4;
+  font-family: "Barlow Condensed", system-ui, sans-serif;
+  font-size: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  letter-spacing: 0.04em;
+  max-width: 320px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.hud b {
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.hud .midi-state {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hud .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff5544;
+  box-shadow: 0 0 6px rgba(255, 85, 68, 0.6);
+  flex-shrink: 0;
+}
+
+.hud .dot.ok {
+  background: #3cf28a;
+  box-shadow: 0 0 6px rgba(60, 242, 138, 0.7);
+}

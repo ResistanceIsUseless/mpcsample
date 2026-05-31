@@ -1,0 +1,100 @@
+/* ====== CHASSIS FLUID SCALING ====== */
+.mpc-frame {
+  display: grid;
+  place-items: start center;
+  width: 100%;
+  padding: 32px 16px 80px;
+}
+
+.mpc {
+  position: relative;
+  width: 920px;
+  border-radius: 28px;
+  background: linear-gradient(
+    180deg,
+    #f4eeda 0%,
+    var(--chassis) 14%,
+    var(--chassis) 86%,
+    var(--chassis-2) 100%
+  );
+  padding: 18px 22px 0;
+  box-shadow:
+    inset 0 1px 0 #fffaee,
+    inset 0 -2px 0 rgba(0, 0, 0, 0.18),
+    inset 0 0 0 1px rgba(80, 70, 40, 0.18),
+    0 36px 80px rgba(0, 0, 0, 0.55),
+    0 8px 0 #b0a88e,
+    0 14px 0 #8b8470,
+    0 22px 30px rgba(0, 0, 0, 0.5);
+  transform-origin: top center;
+}
+
+.mpc::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 22px;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 40% at 50% 0%, rgba(255, 255, 255, 0.3), transparent 70%),
+    radial-gradient(80% 50% at 50% 100%, rgba(0, 0, 0, 0.06), transparent 70%);
+}
+
+/* Fluid scale on narrow viewports */
+@media (max-width: 952px) {
+  .mpc-frame {
+    padding-inline: 0;
+  }
+
+  .mpc {
+    /* Scale down uniformly keeping aspect ratio */
+    transform: scale(min(1, calc((100vw - 16px) / 920)));
+    /* Compensate for the whitespace left by CSS scale */
+    margin-bottom: calc((1 - min(1, calc((100vw - 16px) / 920))) * -1280px);
+  }
+}
+
+/* Electron desktop: remove frame padding (viewport zoom handles scaling);
+   disable the media-query transform to prevent double-scaling. */
+body.is-electron .mpc-frame {
+  padding: 0;
+}
+
+body.is-electron .mpc {
+  transform: none !important;
+  margin-bottom: 0 !important;
+}
+
+/* ====== WRIST REST ====== */
+.wrist {
+  margin: 16px -12px -8px;
+  height: 70px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #b8b6b0 0%, #9e9c95 60%, #7a786f 100%);
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.4),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.15),
+    0 4px 0 #5e5b54;
+  position: relative;
+}
+
+.wrist::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 12px;
+  background: radial-gradient(80% 60% at 50% 50%, rgba(255, 255, 255, 0.15), transparent 60%);
+}
+
+/* ====== PAD BOTTOM ROW ====== */
+.pad-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 4px;
+  margin-top: 4px;
+  font-family: "Antonio";
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  color: var(--label-soft);
+}

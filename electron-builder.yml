@@ -1,0 +1,54 @@
+appId: com.worldlinkstudio.mpcsample
+productName: MPC Sample
+electronVersion: "42.3.0"
+
+directories:
+  output: release
+
+files:
+  - "out/**/*"
+  - "package.json"
+  # The renderer is fully bundled by electron-vite and main/preload inline their
+  # @electron-toolkit/* devDeps, so no runtime node_modules are needed. Excluding
+  # them keeps app.asar small (otherwise tone/tailwind/etc. balloon it to ~300MB).
+  - "!node_modules/**/*"
+  - "!public/kits"
+  - "!src/**/*"
+  - "!electron/**/*"
+  - "!electron.vite.config.{js,ts,mjs,cjs}"
+  - "!vite.config.{js,ts,mjs,cjs}"
+  - "!tsconfig*.json"
+  - "!{.eslintcache,eslint.config.mjs}"
+  - "!{.env,.env.*,.npmrc}"
+
+# Override package.json main for the packaged app
+extraMetadata:
+  main: out/main/index.js
+
+asar: true
+npmRebuild: false
+
+mac:
+  icon: public/favicon/android-chrome-512x512.png
+  target:
+    - dmg
+    - zip
+  category: public.app-category.music
+  identity: null
+
+dmg:
+  artifactName: ${productName}-${version}.${ext}
+
+win:
+  icon: public/favicon/favicon.ico
+  target:
+    - nsis
+    - zip
+
+nsis:
+  artifactName: ${productName}-Setup-${version}.${ext}
+  oneClick: true
+  perMachine: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: MPC Sample

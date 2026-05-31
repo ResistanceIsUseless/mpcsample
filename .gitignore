@@ -141,3 +141,10 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+.DS_Store
+out-tsc/
+release/
+MPC-Sample/
+public/kits/
+claudedocs/
