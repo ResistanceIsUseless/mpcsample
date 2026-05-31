@@ -5,7 +5,6 @@ import { Launcher } from "./components/Launcher";
 import { MPCDevice } from "./components/MPCDevice";
 import { StartOverlay } from "./components/StartOverlay";
 import { TweaksPanel } from "./components/TweaksPanel";
-import { ZoomControls } from "./components/ZoomControls";
 import { isDesktop } from "./desktop/bridge";
 import { useAudioEngine } from "./hooks/useAudioEngine";
 import { useKeyboardInput } from "./hooks/useKeyboardInput";
@@ -43,7 +42,6 @@ export function App() {
       <HUD />
       <TweaksPanel />
       <KitEditor />
-      <ZoomControls />
     </>
   );
 }

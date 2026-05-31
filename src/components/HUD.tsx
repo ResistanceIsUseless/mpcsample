@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { desktop, isDesktop } from "../desktop/bridge";
 import { loadProjectFromDir } from "../desktop/loadProject";
 import type { SampleKit } from "../kits/kit.types";
@@ -14,6 +14,8 @@ const MIDI_STATUS_LABELS: Record<string, string> = {
   unsupported: "MIDI: unsupported",
   denied: "MIDI: permission denied",
 };
+
+const ZOOM_STEP = 0.1;
 
 /** Inline style shared by all HUD chrome buttons. */
 const HUD_BTN_STYLE: React.CSSProperties = {
@@ -33,8 +35,48 @@ export function HUD() {
   const activeKitId = useMPCStore((s) => s.activeKitId);
   const midiStatus = useMPCStore((s) => s.midiStatus);
   const midiDeviceName = useMPCStore((s) => s.midiDeviceName);
+  const uiScale = useMPCStore((s) => s.uiScale);
+  const zoomBy = useMPCStore((s) => s.zoomBy);
+  const resetUiTransform = useMPCStore((s) => s.resetUiTransform);
+  const setUiScale = useMPCStore((s) => s.setUiScale);
 
   const [isLoadingKit, setIsLoadingKit] = useState(false);
+
+  const zoomIn = useCallback(() => zoomBy(ZOOM_STEP), [zoomBy]);
+  const zoomOut = useCallback(() => zoomBy(-ZOOM_STEP), [zoomBy]);
+  const handleFit = useCallback(() => {
+    const mpcEl = document.querySelector(".mpc");
+    if (!mpcEl) return;
+    const rect = mpcEl.getBoundingClientRect();
+    const naturalW = rect.width / uiScale;
+    const naturalH = rect.height / uiScale;
+    const fitScale = Math.min(window.innerWidth / naturalW, window.innerHeight / naturalH);
+    setUiScale(Math.max(0.5, Math.min(2, fitScale)));
+  }, [uiScale, setUiScale]);
+
+  const pct = Math.round(uiScale * 100);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent): void {
+      const target = e.target as HTMLElement | null;
+      if (target?.tagName) {
+        const tag = target.tagName.toLowerCase();
+        if (tag === "input" || tag === "textarea" || target.isContentEditable) return;
+      }
+      if (e.key === "+" || e.key === "=") {
+        e.preventDefault();
+        zoomBy(ZOOM_STEP);
+      } else if (e.key === "-") {
+        e.preventDefault();
+        zoomBy(-ZOOM_STEP);
+      } else if (e.key === "0") {
+        e.preventDefault();
+        resetUiTransform();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [zoomBy, resetUiTransform]);
 
   const bankLetter = BANK_LETTERS[bankIdx] ?? "A";
   const kitLabel = activeKit?.displayName ?? activeKitId;
@@ -125,6 +167,38 @@ export function HUD() {
         >
           + NEW KIT
         </button>
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent("mpc:open-help"))}
+          aria-label="Open help guide"
+          style={HUD_BTN_STYLE}
+        >
+          ? HELP
+        </button>
+        <span
+          style={{ width: "1px", height: "14px", background: "rgba(255,255,255,0.15)", alignSelf: "center" }}
+          aria-hidden="true"
+        />
+        <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+          {`Zoom ${pct}%`}
+        </span>
+        <div role="group" aria-label="Zoom controls" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <button type="button" onClick={zoomOut} aria-label="Zoom out" style={HUD_BTN_STYLE}>
+            −
+          </button>
+          <span style={{ fontSize: "11px", color: "#9aa3b0", minWidth: "30px", textAlign: "center" }} aria-hidden="true">
+            {`${pct}%`}
+          </span>
+          <button type="button" onClick={zoomIn} aria-label="Zoom in" style={HUD_BTN_STYLE}>
+            +
+          </button>
+          <button type="button" onClick={resetUiTransform} aria-label="Reset zoom" style={HUD_BTN_STYLE}>
+            ⊙
+          </button>
+          <button type="button" onClick={handleFit} aria-label="Fit MPC to window" style={HUD_BTN_STYLE}>
+            ⊡ Fit
+          </button>
+        </div>
       </div>
 
     </div>
