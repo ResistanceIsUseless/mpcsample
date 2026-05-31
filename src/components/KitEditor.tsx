@@ -57,7 +57,6 @@ export function KitEditor() {
   const activeKit = useMPCStore((s) => s.activeKit);
   const padMap = useMPCStore((s) => s.padMap);
   const bankIdx = useMPCStore((s) => s.bankIdx);
-  const maxBank = useMPCStore((s) => s.maxBank);
   const setBank = useMPCStore((s) => s.setBank);
   const setKitName = useMPCStore((s) => s.setKitName);
   const setPadName = useMPCStore((s) => s.setPadName);
@@ -73,7 +72,7 @@ export function KitEditor() {
   const lastFocusRef = useRef<HTMLElement | null>(null);
 
   const selectedPadData = selectedPad !== null ? padMap[selectedPad] : null;
-  const visibleBanks = BANK_LABELS.slice(0, maxBank + 1);
+  const visibleBanks = BANK_LABELS;
 
   useEffect(() => {
     const handler = () => {

@@ -4,7 +4,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SampleKit, SamplePad } from "../../kits/kit.types";
 import type { AudioEngineLike } from "../../types/mpc.types";
-import { _cancelAllReleaseTimers, useMPCStore } from "../store";
+import { _cancelAllReleaseTimers, buildExportKit, useMPCStore } from "../store";
 
 // ── Mock engine factory ────────────────────────────────────────────────────────
 // Note: vi.fn(regularFunction) — NOT arrow functions — per the project's
@@ -349,6 +349,31 @@ describe("swapPad", () => {
     useMPCStore.getState().swapPad(0, 5);
     expect(useMPCStore.getState().padMap[0]).toBeNull();
     expect(useMPCStore.getState().padMap[5]?.sampleId).toBe(padA.sampleId);
+  });
+
+  it("swap is reflected in buildExportKit — pads land at their new globalPadIdx", () => {
+    // Verify the full chain: swapPad updates padMap → buildExportKit reads padMap
+    // → the exported pads carry the swapped globalPadIdx values.
+    const padA = makePad(0, { fileName: "kick.wav", sampleId: "kick" });
+    const padB = makePad(5, { fileName: "snare.wav", sampleId: "snare" });
+    const kit = makeKit("test", [padA, padB]);
+
+    const padMap = { ...useMPCStore.getState().padMap, 0: padA, 5: padB };
+    useMPCStore.setState({ padMap, activeKit: kit });
+
+    useMPCStore.getState().swapPad(0, 5);
+
+    const { padMap: swappedMap, activeKit } = useMPCStore.getState();
+    const exported = buildExportKit(activeKit, swappedMap);
+
+    expect(exported).not.toBeNull();
+    // After swap: slot 0 holds what was pad B; slot 5 holds what was pad A.
+    const at0 = exported!.pads.find((p) => p.globalPadIdx === 0);
+    const at5 = exported!.pads.find((p) => p.globalPadIdx === 5);
+    expect(at0?.sampleId).toBe("snare");
+    expect(at5?.sampleId).toBe("kick");
+    expect(at0?.fileName).toBe("snare.wav");
+    expect(at5?.fileName).toBe("kick.wav");
   });
 });
 

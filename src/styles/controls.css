@@ -717,6 +717,110 @@
   }
 }
 
+/** Source pad while a hold-and-drag swap gesture is active. */
+.pad.pad--dragging {
+  opacity: 0.6;
+  cursor: grabbing;
+  transform: scale(0.96);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -3px 4px rgba(0, 0, 0, 0.2),
+    0 0 0 2px var(--led-orange),
+    0 0 12px rgba(255, 138, 42, 0.5);
+}
+
+/** Force grabbing cursor everywhere during a pad swap drag. */
+body.is-pad-dragging,
+body.is-pad-dragging * {
+  cursor: grabbing !important;
+}
+
+/** Destination pad highlighted as a potential swap target during a pad drag. */
+.pad.pad--swap-target {
+  background: linear-gradient(180deg, #fff5e8 0%, #ffe0b2 35%, #ffb74d 100%);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    inset 0 -3px 4px rgba(120, 60, 0, 0.2),
+    inset 0 0 0 2px var(--led-orange),
+    0 0 0 2px var(--led-orange),
+    0 0 18px rgba(255, 138, 42, 0.7);
+}
+
+.pad.pad--swap-target .pad-num,
+.pad.pad--swap-target .pad-cap {
+  color: #7a3800;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pad.pad--swap-target {
+    animation: pad-swap-pulse 0.6s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes pad-swap-pulse {
+  from {
+    box-shadow:
+      inset 0 2px 0 #fff,
+      inset 0 -3px 4px rgba(120, 60, 0, 0.2),
+      inset 0 0 0 2px var(--led-orange),
+      0 0 0 2px var(--led-orange),
+      0 0 12px rgba(255, 138, 42, 0.5);
+  }
+  to {
+    box-shadow:
+      inset 0 2px 0 #fff,
+      inset 0 -3px 4px rgba(120, 60, 0, 0.2),
+      inset 0 0 0 2px var(--led-orange),
+      0 0 0 2px var(--led-orange),
+      0 0 24px rgba(255, 138, 42, 0.9);
+  }
+}
+
+/** Floating ghost badge that follows the cursor during a pad swap drag. */
+.pad-drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(14px, 14px);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #2a2a2e 0%, #1a1a1e 100%);
+  border: 1.5px solid var(--led-orange);
+  border-radius: 6px;
+  padding: 4px 8px 4px 6px;
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.55),
+    0 0 10px rgba(255, 138, 42, 0.35);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.pad-drag-ghost-icon {
+  color: var(--led-orange);
+  flex-shrink: 0;
+}
+
+.pad-drag-ghost-num {
+  font-family: "Antonio", sans-serif;
+  font-weight: 700;
+  font-size: 9px;
+  color: var(--led-orange);
+  letter-spacing: 0.06em;
+}
+
+.pad-drag-ghost-label {
+  font-family: "Antonio", sans-serif;
+  font-weight: 700;
+  font-size: 9px;
+  color: #ccc;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /** Inline error message shown when a non-WAV file is dropped. */
 .pad-drop-error {
   position: absolute;

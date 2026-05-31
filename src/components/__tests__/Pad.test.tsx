@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PADS } from "../../data/padLayout";
 import type { SamplePad } from "../../kits/kit.types";
 import { useMPCStore } from "../../state/store";
@@ -156,6 +156,154 @@ describe("Pad", () => {
   it("useReducedMotion hook is invoked (matchMedia was queried)", () => {
     const { container } = render(<Pad definition={padDef0} globalIdx={0} />);
     expect(container.querySelector(".pad")).toBeInTheDocument();
+  });
+});
+
+describe("Pad — hold-and-drag swap gesture", () => {
+  // jsdom does not implement document.elementFromPoint; define it via
+  // Object.defineProperty so each test can control what's under the pointer.
+  let eftpMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    eftpMock = vi.fn().mockReturnValue(null);
+    Object.defineProperty(document, "elementFromPoint", {
+      value: eftpMock,
+      writable: true,
+      configurable: true,
+    });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(document, "elementFromPoint", {
+      value: undefined,
+      writable: true,
+      configurable: true,
+    });
+  });
+
+  function stubSwapTarget(padIdx: number) {
+    const el = document.createElement("button");
+    el.setAttribute("data-pad-idx", String(padIdx));
+    eftpMock.mockReturnValue(el);
+    return el;
+  }
+
+  it("tap (pointerDown + pointerUp without movement) does not call swapPad", () => {
+    const swapPad = vi.fn();
+    const triggerPad = vi.fn();
+    const releasePad = vi.fn();
+    setState({ swapPad, triggerPad, releasePad });
+    render(<Pad definition={padDef0} globalIdx={0} />);
+    const btn = screen.getByRole("button");
+
+    fireEvent.pointerDown(btn, { clientX: 0, clientY: 0, pressure: 0 });
+    fireEvent.pointerUp(btn, { clientX: 0, clientY: 0 });
+
+    expect(triggerPad).toHaveBeenCalledWith(0, 0.9);
+    expect(releasePad).toHaveBeenCalledWith(0);
+    expect(swapPad).not.toHaveBeenCalled();
+  });
+
+  it("small jitter below threshold is treated as a tap (no swap)", () => {
+    const swapPad = vi.fn();
+    setState({ swapPad });
+    render(<Pad definition={padDef0} globalIdx={0} />);
+    const btn = screen.getByRole("button");
+
+    stubSwapTarget(5);
+    fireEvent.pointerDown(btn, { clientX: 0, clientY: 0, pressure: 0 });
+    // sqrt(3² + 3²) ≈ 4.2 — below 10 px threshold
+    fireEvent.pointerMove(btn, { clientX: 3, clientY: 3 });
+    fireEvent.pointerUp(btn, { clientX: 3, clientY: 3 });
+
+    expect(swapPad).not.toHaveBeenCalled();
+  });
+
+  it("drag past threshold over a different pad calls swapPad(from, to)", () => {
+    const swapPad = vi.fn();
+    setState({ swapPad });
+    render(<Pad definition={padDef0} globalIdx={0} />);
+    const btn = screen.getByRole("button");
+
+    stubSwapTarget(5);
+    fireEvent.pointerDown(btn, { clientX: 0, clientY: 0, pressure: 0 });
+    fireEvent.pointerMove(btn, { clientX: 50, clientY: 50 });
+    fireEvent.pointerUp(btn, { clientX: 50, clientY: 50 });
+
+    expect(swapPad).toHaveBeenCalledOnce();
+    expect(swapPad).toHaveBeenCalledWith(0, 5);
+  });
+
+  it("drag releasing over the source pad itself does not call swapPad", () => {
+    const swapPad = vi.fn();
+    setState({ swapPad });
+    render(<Pad definition={padDef0} globalIdx={0} />);
+    const btn = screen.getByRole("button");
+
+    // elementFromPoint returns the source pad (idx 0 == globalIdx)
+    stubSwapTarget(0);
+    fireEvent.pointerDown(btn, { clientX: 0, clientY: 0, pressure: 0 });
+    fireEvent.pointerMove(btn, { clientX: 50, clientY: 50 });
+    fireEvent.pointerUp(btn, { clientX: 50, clientY: 50 });
+
+    expect(swapPad).not.toHaveBeenCalled();
+  });
+
+  it("drag adds pad--dragging class to the source pad during gesture", () => {
+    setState({ swapPad: vi.fn() });
+    const { container } = render(<Pad definition={padDef0} globalIdx={0} />);
+    const btn = container.querySelector("button")!;
+
+    stubSwapTarget(5);
+    fireEvent.pointerDown(btn, { clientX: 0, clientY: 0, pressure: 0 });
+    fireEvent.pointerMove(btn, { clientX: 50, clientY: 50 });
+
+    expect(btn.className).toContain("pad--dragging");
+  });
+
+  it("pad--dragging class is removed after pointerUp", () => {
+    setState({ swapPad: vi.fn() });
+    const { container } = render(<Pad definition={padDef0} globalIdx={0} />);
+    const btn = container.querySelector("button")!;
+
+    stubSwapTarget(5);
+    fireEvent.pointerDown(btn, { clientX: 0, clientY: 0, pressure: 0 });
+    fireEvent.pointerMove(btn, { clientX: 50, clientY: 50 });
+    fireEvent.pointerUp(btn, { clientX: 50, clientY: 50 });
+
+    expect(btn.className).not.toContain("pad--dragging");
+  });
+
+  it("triggerPad still fires on pointerDown even when a drag follows (playback regression)", () => {
+    const triggerPad = vi.fn();
+    const swapPad = vi.fn();
+    setState({ triggerPad, swapPad });
+    render(<Pad definition={padDef0} globalIdx={0} />);
+    const btn = screen.getByRole("button");
+
+    stubSwapTarget(5);
+    fireEvent.pointerDown(btn, { clientX: 0, clientY: 0, pressure: 0 });
+    fireEvent.pointerMove(btn, { clientX: 50, clientY: 50 });
+    fireEvent.pointerUp(btn, { clientX: 50, clientY: 50 });
+
+    // Playback fires immediately on press, even if a swap follows.
+    expect(triggerPad).toHaveBeenCalledWith(0, 0.9);
+    expect(swapPad).toHaveBeenCalledWith(0, 5);
+  });
+
+  it("pointerCancel during drag resets dragging state without swapping", () => {
+    const swapPad = vi.fn();
+    setState({ swapPad });
+    const { container } = render(<Pad definition={padDef0} globalIdx={0} />);
+    const btn = container.querySelector("button")!;
+
+    stubSwapTarget(5);
+    fireEvent.pointerDown(btn, { clientX: 0, clientY: 0, pressure: 0 });
+    fireEvent.pointerMove(btn, { clientX: 50, clientY: 50 });
+    fireEvent.pointerCancel(btn);
+
+    expect(swapPad).not.toHaveBeenCalled();
+    expect(btn.className).not.toContain("pad--dragging");
   });
 });
 

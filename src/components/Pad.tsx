@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { buildUserSamplePad, importWavFile } from "../kits/importWav";
 import type { GlobalPadIdx, SamplePad } from "../kits/kit.types";
@@ -29,6 +30,18 @@ type PadProps = {
 // Auto-dismiss delay for inline drop errors (ms).
 const DROP_ERROR_DISMISS_MS = 4000;
 
+// Minimum pointer travel (px) before a press becomes a drag-to-swap gesture.
+// Below this threshold the press is treated as a normal tap (plays the pad).
+const DRAG_THRESHOLD_PX = 10;
+
+type DragState = {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  // Becomes true once the pointer travels past DRAG_THRESHOLD_PX.
+  dragging: boolean;
+};
+
 export function Pad({
   definition,
   globalIdx,
@@ -39,6 +52,9 @@ export function Pad({
   const state = useMPCStore((s) => s.pads[globalIdx]);
   const triggerPad = useMPCStore((s) => s.triggerPad);
   const releasePad = useMPCStore((s) => s.releasePad);
+  // swapPad exchanges two pad slots in the padMap (and the live audio engine).
+  // globalPadIdx is updated on each swapped pad, so the export reflects the swap.
+  const swapPad = useMPCStore((s) => s.swapPad);
   const registerUserSample = useMPCStore((s) => s.registerUserSample);
   const setPadSample = useMPCStore((s) => s.setPadSample);
 
@@ -47,9 +63,26 @@ export function Pad({
   useReducedMotion();
 
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
   const [dropError, setDropError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isDragging) return;
+    document.body.classList.add("is-pad-dragging");
+    return () => document.body.classList.remove("is-pad-dragging");
+  }, [isDragging]);
   // Timer reference so we can clear a pending dismiss on unmount / new error.
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Active pointer drag state; null when no drag is in progress.
+  const dragRef = useRef<DragState | null>(null);
+  // The pad element currently highlighted as a potential swap target.
+  const swapTargetRef = useRef<Element | null>(null);
+
+  const clearSwapTarget = useCallback(() => {
+    swapTargetRef.current?.classList.remove("pad--swap-target");
+    swapTargetRef.current = null;
+  }, []);
 
   const clearDropError = useCallback(() => {
     if (errorTimerRef.current !== null) {
@@ -74,7 +107,8 @@ export function Pad({
   const stateClass = state === "press" ? "is-press" : state === "armed" ? "is-armed" : "";
   const loadingClass = loading ? "is-loading" : "";
   const dropClass = isDragOver ? "pad--drop-target" : "";
-  const padClass = ["pad", stateClass, loadingClass, dropClass, className]
+  const draggingClass = isDragging ? "pad--dragging" : "";
+  const padClass = ["pad", stateClass, loadingClass, dropClass, draggingClass, className]
     .filter(Boolean)
     .join(" ");
 
@@ -92,11 +126,56 @@ export function Pad({
     (e: React.PointerEvent<HTMLButtonElement>) => {
       e.preventDefault();
       const vel = e.pressure > 0 ? e.pressure : 0.9;
+      // Playback fires immediately on press — this is intentional. Even when a
+      // drag follows, the brief sound confirms which pad you grabbed.
       triggerPad(globalIdx, vel);
-      // setPointerCapture may not exist in all environments (e.g. jsdom)
       e.currentTarget.setPointerCapture?.(e.pointerId);
+      // Record drag origin so handlePointerMove can detect a drag gesture.
+      dragRef.current = {
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        startY: e.clientY,
+        dragging: false,
+      };
     },
     [globalIdx, triggerPad],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent<HTMLButtonElement>) => {
+      const drag = dragRef.current;
+      if (!drag || drag.pointerId !== e.pointerId) return;
+
+      // Only transition to drag state once the threshold is crossed.
+      if (!drag.dragging) {
+        const dx = e.clientX - drag.startX;
+        const dy = e.clientY - drag.startY;
+        if (Math.sqrt(dx * dx + dy * dy) < DRAG_THRESHOLD_PX) return;
+        drag.dragging = true;
+        setIsDragging(true);
+      }
+
+      setDragPos({ x: e.clientX, y: e.clientY });
+
+      // Find the pad under the pointer. setPointerCapture routes all events to
+      // the origin element, so elementFromPoint gives the real hit-tested target.
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const padEl = el?.closest("[data-pad-idx]") ?? null;
+      const rawIdx = padEl?.getAttribute("data-pad-idx");
+      const targetIdx = rawIdx != null ? parseInt(rawIdx, 10) : NaN;
+      // Don't highlight the source pad as a drop target.
+      const validTarget =
+        !Number.isNaN(targetIdx) && targetIdx !== globalIdx ? padEl : null;
+
+      if (validTarget !== swapTargetRef.current) {
+        clearSwapTarget();
+        if (validTarget) {
+          validTarget.classList.add("pad--swap-target");
+          swapTargetRef.current = validTarget;
+        }
+      }
+    },
+    [globalIdx, clearSwapTarget],
   );
 
   const handlePointerUp = useCallback(
@@ -105,8 +184,30 @@ export function Pad({
       if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
         e.currentTarget.releasePointerCapture?.(e.pointerId);
       }
+
+      const drag = dragRef.current;
+      if (drag?.dragging) {
+        // Resolve the drop target from the final pointer position.
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const padEl = el?.closest("[data-pad-idx]");
+        const rawIdx = padEl?.getAttribute("data-pad-idx");
+        const targetIdx = rawIdx != null ? parseInt(rawIdx, 10) : NaN;
+        if (
+          !Number.isNaN(targetIdx) &&
+          targetIdx >= 0 &&
+          targetIdx <= 127 &&
+          targetIdx !== globalIdx
+        ) {
+          swapPad(globalIdx, targetIdx as GlobalPadIdx);
+        }
+      }
+
+      clearSwapTarget();
+      dragRef.current = null;
+      setIsDragging(false);
+      setDragPos(null);
     },
-    [globalIdx, releasePad],
+    [globalIdx, releasePad, swapPad, clearSwapTarget],
   );
 
   const handlePointerCancel = useCallback(
@@ -115,15 +216,28 @@ export function Pad({
       if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
         e.currentTarget.releasePointerCapture?.(e.pointerId);
       }
+      clearSwapTarget();
+      dragRef.current = null;
+      setIsDragging(false);
+      setDragPos(null);
     },
-    [globalIdx, releasePad],
+    [globalIdx, releasePad, clearSwapTarget],
   );
 
   const handlePointerLeave = useCallback(
     (e: React.PointerEvent<HTMLButtonElement>) => {
+      // During an active drag, pointer capture keeps events flowing to this
+      // element — let the drag continue and resolve on pointerUp/pointerCancel.
+      if (dragRef.current?.dragging) {
+        // Release the auditory press state but keep capture for swap tracking.
+        releasePad(globalIdx);
+        return;
+      }
       if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
         releasePad(globalIdx);
         e.currentTarget.releasePointerCapture?.(e.pointerId);
+        dragRef.current = null;
+        setIsDragging(false);
       }
     },
     [globalIdx, releasePad],
@@ -217,36 +331,75 @@ export function Pad({
   );
 
   return (
-    <button
-      type="button"
-      className={padClass}
-      data-pad-idx={globalIdx}
-      aria-label={ariaLabel}
-      aria-pressed={state === "press"}
-      aria-busy={loading || undefined}
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerCancel}
-      onPointerLeave={handlePointerLeave}
-      onKeyDown={handleKeyDown}
-      onKeyUp={handleKeyUp}
-      onDragOver={handleDragOver}
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      <span className="pad-num">{paddedNum}</span>
-      {loading && (
-        <span className="pad-loading" aria-hidden="true">
-          ·
-        </span>
-      )}
-      <span className="pad-cap">{capLabel}</span>
-      {dropError && (
-        <span className="pad-drop-error" role="alert">
-          {dropError}
-        </span>
-      )}
-    </button>
+    <>
+      <button
+        type="button"
+        className={padClass}
+        data-pad-idx={globalIdx}
+        aria-label={ariaLabel}
+        aria-pressed={state === "press"}
+        aria-busy={loading || undefined}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onPointerLeave={handlePointerLeave}
+        onKeyDown={handleKeyDown}
+        onKeyUp={handleKeyUp}
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <span className="pad-num">{paddedNum}</span>
+        {loading && (
+          <span className="pad-loading" aria-hidden="true">
+            ·
+          </span>
+        )}
+        <span className="pad-cap">{capLabel}</span>
+        {dropError && (
+          <span className="pad-drop-error" role="alert">
+            {dropError}
+          </span>
+        )}
+      </button>
+      {isDragging &&
+        dragPos &&
+        createPortal(
+          <div
+            className="pad-drag-ghost"
+            style={{ left: dragPos.x, top: dragPos.y }}
+            aria-hidden="true"
+          >
+            <svg
+              className="pad-drag-ghost-icon"
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M1 4.5h9.5M9 2.5l2 2-2 2"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M13 9.5H3.5M5.5 7.5l-2 2 2 2"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="pad-drag-ghost-num">{paddedNum}</span>
+            <span className="pad-drag-ghost-label">{capLabel}</span>
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }

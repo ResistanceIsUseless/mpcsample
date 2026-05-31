@@ -222,6 +222,37 @@ describe("KitEditor", () => {
     expect(screen.getByRole("button", { name: /Bank D/i })).toBeInTheDocument();
   });
 
+  it("shows all 8 banks A–H for an empty new kit (not gated on maxBank)", () => {
+    // A new kit has no populated pads so maxBank would default to 3 (A–D) under
+    // the old behaviour; the fix always shows all 8 banks regardless.
+    useMPCStore.setState({ maxBank: 3, padMap: (() => {
+      const m: Record<number, null> = {};
+      for (let i = 0; i < 128; i++) m[i] = null;
+      return m;
+    })() });
+    render(<KitEditor />);
+    openEditor();
+    for (const label of ["A", "B", "C", "D", "E", "F", "G", "H"]) {
+      expect(screen.getByRole("button", { name: `Bank ${label}` })).toBeInTheDocument();
+    }
+  });
+
+  it("shows all 8 banks A–H even when maxBank is explicitly 0", () => {
+    useMPCStore.setState({ maxBank: 0 });
+    render(<KitEditor />);
+    openEditor();
+    expect(screen.getByRole("button", { name: "Bank H" })).toBeInTheDocument();
+  });
+
+  it("clicking Bank H calls store.setBank(7)", () => {
+    const setBank = vi.fn();
+    useMPCStore.setState({ setBank });
+    render(<KitEditor />);
+    openEditor();
+    fireEvent.click(screen.getByRole("button", { name: "Bank H" }));
+    expect(setBank).toHaveBeenCalledWith(7);
+  });
+
   it("clicking bank B calls store.setBank(1)", () => {
     const setBank = vi.fn();
     useMPCStore.setState({ setBank });

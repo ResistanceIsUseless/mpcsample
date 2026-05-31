@@ -46,7 +46,7 @@
     inset 0 0 0 2px #5e5e62,
     0 0 0 2px #061222,
     0 0 0 3px transparent;
-  cursor: pointer;
+  cursor: grab;
   user-select: none;
   transition:
     box-shadow 80ms,
