@@ -14,8 +14,9 @@ export function Screen({ engine }: ScreenProps) {
   const lastTriggeredPad = useMPCStore((s) => s.lastTriggeredPad);
   const padMap = useMPCStore((s) => s.padMap);
 
-  const bankLetter = BANK_LABELS[bankIdx] ?? "A";
-  const bankBadge = `${bankLetter}${String(bankIdx + 1).padStart(2, "0")}`;
+  const padBankIdx = lastTriggeredPad !== null ? lastTriggeredPad >> 4 : bankIdx;
+  const padLocalNum = lastTriggeredPad !== null ? (lastTriggeredPad & 0xf) + 1 : 1;
+  const bankBadge = `${BANK_LABELS[padBankIdx] ?? "A"}${String(padLocalNum).padStart(2, "0")}`;
   const kitLabel = activeKit?.displayName ?? "—";
 
   const triggeredPad = lastTriggeredPad !== null ? padMap[lastTriggeredPad] : null;
@@ -43,7 +44,7 @@ export function Screen({ engine }: ScreenProps) {
             <span>{sampleName}</span>
           </div>
           <div className="scr-pads">
-            {BANK_LABELS.slice(0, 4).map((letter, i) => (
+            {BANK_LABELS.map((letter, i) => (
               <div key={letter} className={`sp${i === bankIdx ? " on" : ""}`}>
                 {letter}
               </div>

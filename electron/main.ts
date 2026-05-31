@@ -241,6 +241,13 @@ function registerIpcHandlers(): void {
 
 const APP_ICON_PATH = join(app.getAppPath(), "public/favicon/android-chrome-512x512.png");
 
+// Prevent Chromium from using the macOS Keychain for its internal Safe Storage
+// encryption key. This app stores no sensitive browser session data, so the OS
+// keychain is unnecessary and causes a password prompt on every launch.
+if (process.platform === "darwin") {
+  app.commandLine.appendSwitch("password-store", "basic");
+}
+
 app.whenReady().then(() => {
   electronApp.setAppUserModelId("com.worldlinkstudio.mpcsample");
 

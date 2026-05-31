@@ -39,11 +39,13 @@ export function TweaksPanel() {
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const lastFocusRef = useRef<HTMLElement | null>(null);
 
-  // Listen for open event from HUD
+  // Listen for toggle event from HUD
   useEffect(() => {
     const handler = () => {
-      lastFocusRef.current = document.activeElement as HTMLElement;
-      setOpen(true);
+      setOpen((prev) => {
+        if (!prev) lastFocusRef.current = document.activeElement as HTMLElement;
+        return !prev;
+      });
     };
     window.addEventListener("mpc:open-tweaks", handler);
     return () => window.removeEventListener("mpc:open-tweaks", handler);

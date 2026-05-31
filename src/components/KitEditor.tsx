@@ -76,8 +76,10 @@ export function KitEditor() {
 
   useEffect(() => {
     const handler = () => {
-      lastFocusRef.current = document.activeElement as HTMLElement;
-      setOpen(true);
+      setOpen((prev) => {
+        if (!prev) lastFocusRef.current = document.activeElement as HTMLElement;
+        return !prev;
+      });
     };
     window.addEventListener("mpc:open-editor", handler);
     return () => window.removeEventListener("mpc:open-editor", handler);
