@@ -109,8 +109,29 @@ export function StartOverlay({ onStart }: StartOverlayProps) {
             adjust volume, pitch, and tune.
           </li>
           <li>
+            <b>Zoom</b> — use <b>+</b> / <b>−</b> keys or Ctrl/⌘+scroll to zoom;
+            press <b>0</b> to reset, or click <b>⊡ Fit</b> to fit the device to
+            the window. Drag the background to reposition.
+          </li>
+          <li>
+            <b>Sample Start/End</b> - use the start and end knob to set the
+            start and end of the sample.
+          </li>
+          <li>
             <b>Export</b> — click <b>Export</b> to save a <code>.xpj</code>{" "}
             project file ready for your MPC hardware.
+          </li>
+          <li>
+            <b>Desktop Version</b> - desktop version of the app has additional
+            features like auto-open export folder and SD card eject. Download{" "}
+            <a
+              href="https://github.com/WorldLinkStudio/mpcsample/releases"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500"
+            >
+              here
+            </a>
           </li>
           <li>
             <b>Open Source</b> - Free and open source under the GPL-3.0 license

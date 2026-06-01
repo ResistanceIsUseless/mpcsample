@@ -144,6 +144,12 @@ export class SampleEngine implements AudioEngineLike {
     }
   }
 
+  setPadTrim(idx: PadIndex, startFrames: number, endFrames: number): void {
+    const existing = this.padMap.get(idx);
+    if (!existing) return;
+    this.padMap.set(idx, { ...existing, sampleStart: startFrames, sampleEnd: endFrames });
+  }
+
   isPadLoading(idx: PadIndex): boolean {
     return this.loading.has(idx);
   }
@@ -466,6 +472,19 @@ export class SampleEngine implements AudioEngineLike {
     }
 
     const playTime = time ?? Tone.now();
+
+    const { sampleStart, sampleEnd } = pad;
+    if (sampleStart !== undefined && sampleEnd !== undefined) {
+      const audioBuffer = buf.get();
+      if (audioBuffer && audioBuffer.sampleRate > 0) {
+        const sr = audioBuffer.sampleRate;
+        const offsetSec = sampleStart / sr;
+        const durationSec = Math.max(0, (sampleEnd - sampleStart)) / sr;
+        pp.player.start(playTime, offsetSec, durationSec);
+        return;
+      }
+    }
+
     pp.player.start(playTime);
   }
 }

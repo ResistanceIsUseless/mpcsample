@@ -123,6 +123,13 @@ export interface AudioEngineLike {
   setPadGain(idx: PadIndex, gainCoefficient: number): void;
 
   /**
+   * Set the trim region for a pad (sample frames, matching the `.xpj` unit).
+   * Applied as `player.start(time, startSec, durationSec)` during playback.
+   * Pass startFrames=0 and endFrames=totalFrames to restore full-length playback.
+   */
+  setPadTrim(idx: PadIndex, startFrames: number, endFrames: number): void;
+
+  /**
    * Returns `true` while the sample buffer for `idx` is being fetched /
    * decoded.  Drives the per-pad loading indicator in the UI.
    */

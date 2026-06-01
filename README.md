@@ -78,3 +78,9 @@ xattr -cr "MPC Sample.app"
 ```
 
 Run either command once; no further steps are needed.
+
+---
+
+## Disclaimer
+
+_MPC Sample.app is an independent, community-built tool and is not affiliated with, endorsed by, or sponsored by inMusic Brands, Inc. or its subsidiaries. "MPC" and "Akai Professional" are registered trademarks of inMusic Brands, Inc. All trademarks are the property of their respective owners._

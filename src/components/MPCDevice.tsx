@@ -137,8 +137,8 @@ export function MPCDevice({ engine = null }: MPCDeviceProps) {
               {/* CENTER COLUMN: knobs + bank selector + pad grid */}
               <div className="col-center">
                 <div className="knob-row">
-                  <Knob name="k1" label="K1" />
-                  <Knob name="k2" label="K2" />
+                  <Knob name="k1" label="START" />
+                  <Knob name="k2" label="END" />
                   <Knob name="k3" label="K3" />
                 </div>
                 <BankSelector />

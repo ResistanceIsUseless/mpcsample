@@ -96,6 +96,20 @@ export type SamplePad = {
    * Default: 0.5.  Serialised with a decimal point.
    */
   pan: number;
+
+  /**
+   * Trim start point in sample frames (inclusive).
+   * Written to `instruments[idx].layersv[0].sampleStart` and
+   * `sliceInfo.Start` in the `.xpj`. Absent = start from frame 0.
+   */
+  sampleStart?: number;
+
+  /**
+   * Trim end point in sample frames (exclusive).
+   * Written to `instruments[idx].layersv[0].sampleEnd` and
+   * `sliceInfo.End` in the `.xpj`. Absent = play to the last frame.
+   */
+  sampleEnd?: number;
 };
 
 /**

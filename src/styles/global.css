@@ -20,10 +20,10 @@ body {
 }
 
 body {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   display: grid;
   place-items: center;
-  padding: 32px 16px 80px;
   background: radial-gradient(1200px 700px at 50% 30%, #1f3a5e 0%, #15233b 45%, #07101e 100%);
 }
 

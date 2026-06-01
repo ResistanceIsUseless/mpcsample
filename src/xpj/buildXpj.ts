@@ -232,11 +232,13 @@ export function assignPad(instruments: Instrument[], pad: SamplePad, sampleEndFr
   // Playback region: start at 0, end at the sample's frame count. Without a
   // non-zero end the MPC loads the project but never sounds the pad.
   if (sampleEndFrames > 0) {
-    layer.sampleStart = 0;
-    layer.sampleEnd = sampleEndFrames;
+    const start = pad.sampleStart ?? 0;
+    const end = pad.sampleEnd ?? sampleEndFrames;
+    layer.sampleStart = start;
+    layer.sampleEnd = end;
     if (layer.sliceInfo) {
-      layer.sliceInfo.Start = 0;
-      layer.sliceInfo.End = sampleEndFrames;
+      layer.sliceInfo.Start = start;
+      layer.sliceInfo.End = end;
     }
   }
 }
