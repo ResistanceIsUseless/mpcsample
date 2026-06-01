@@ -6,8 +6,7 @@ import { Waveform } from "../Waveform";
 // Mock useWaveformDraw to capture calls
 const mockUseWaveformDraw = vi.fn();
 vi.mock("../../hooks/useWaveformDraw", () => ({
-  useWaveformDraw: (ref: unknown, getBuffer: unknown, mode: unknown) =>
-    mockUseWaveformDraw(ref, getBuffer, mode),
+  useWaveformDraw: (...args: unknown[]) => mockUseWaveformDraw(...args),
 }));
 
 beforeEach(() => {
@@ -37,6 +36,8 @@ describe("Waveform", () => {
       expect.objectContaining({ current: expect.anything() }),
       null,
       expect.any(String),
+      expect.any(Number),
+      expect.any(Number),
     );
   });
 

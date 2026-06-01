@@ -19,6 +19,8 @@ export function useWaveformDraw(
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
   getBuffer: (() => Float32Array | null) | null,
   mode: "waveform" | "fft" | "oscilloscope" = "waveform",
+  viewStart = 0,
+  viewEnd = 1,
 ): void {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -30,8 +32,10 @@ export function useWaveformDraw(
     let stopped = false;
     // Peak hold state for FFT mode
     let peaks: Float32Array | null = null;
-    // Cache for waveform mode — skip redraw when reference unchanged
+    // Cache for waveform mode — skip redraw when buffer reference AND view window are unchanged
     let lastWaveformBuf: Float32Array | null = null;
+    let lastViewStart = -1;
+    let lastViewEnd = -1;
 
     function resizeCanvas(): void {
       if (!canvas) return;
@@ -56,14 +60,16 @@ export function useWaveformDraw(
       if (mode === "waveform") {
         const buf = getBuffer ? getBuffer() : null;
 
-        // Skip redraw — and crucially skip clearRect — when the buffer is
-        // unchanged or when the new pad's buffer is still loading (null).
-        // This keeps the previous waveform visible instead of flashing to blank.
-        if (lastWaveformBuf !== null && (buf === lastWaveformBuf || buf === null)) {
+        // Skip redraw when both the buffer reference AND the view window are unchanged.
+        // A null buf while loading keeps the previous waveform visible (no flash to blank).
+        const viewUnchanged = lastViewStart === viewStart && lastViewEnd === viewEnd;
+        if (lastWaveformBuf !== null && viewUnchanged && (buf === lastWaveformBuf || buf === null)) {
           rafId = requestAnimationFrame(drawFrame);
           return;
         }
         lastWaveformBuf = buf;
+        lastViewStart = viewStart;
+        lastViewEnd = viewEnd;
 
         ctx.clearRect(0, 0, w, h);
 
@@ -104,10 +110,12 @@ export function useWaveformDraw(
 
           ctx.fillStyle = "#ffd200";
 
+          const winStart = viewStart * N;
+          const winSize = (viewEnd - viewStart) * N;
           for (let x = 0; x < w; x++) {
-            // Map column → sample range (even a 1-sample slice still paints)
-            const sStart = Math.floor((x / w) * N);
-            const sEnd = Math.max(sStart + 1, Math.floor(((x + 1) / w) * N));
+            // Map column → sample range within the zoom window
+            const sStart = Math.floor(winStart + (x / w) * winSize);
+            const sEnd = Math.max(sStart + 1, Math.floor(winStart + ((x + 1) / w) * winSize));
 
             let minS = 0;
             let maxS = 0;
@@ -271,5 +279,5 @@ export function useWaveformDraw(
       window.removeEventListener("resize", resizeCanvas);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [canvasRef, getBuffer, mode]);
+  }, [canvasRef, getBuffer, mode, viewStart, viewEnd]);
 }

@@ -268,6 +268,9 @@ type Actions = {
   /** Update linear gain for a pad and forward to the engine. */
   setPadGain: (idx: GlobalPadIdx, gainCoefficient: number) => void;
 
+  /** Update trim start/end (in sample frames) for a pad and forward to the engine. */
+  setPadTrim: (idx: GlobalPadIdx, startFrames: number, endFrames: number) => void;
+
   /**
    * Rename the exported kit name (writes to `activeKit.exportName`).
    * Creates an immutable clone of `activeKit` with the new name.
@@ -568,6 +571,21 @@ export const useMPCStore = create<State & Actions>((set, get) => ({
       },
     });
     engineRef?.setPadGain(idx, clampedGain);
+  },
+
+  setPadTrim: (idx, startFrames, endFrames) => {
+    const { padMap, engineRef } = get();
+    const existing = padMap[idx];
+    if (!existing) return;
+    const clampedStart = Math.max(0, Math.round(startFrames));
+    const clampedEnd = Math.max(clampedStart + 1, Math.round(endFrames));
+    set({
+      padMap: {
+        ...padMap,
+        [idx]: { ...existing, sampleStart: clampedStart, sampleEnd: clampedEnd },
+      },
+    });
+    engineRef?.setPadTrim(idx, clampedStart, clampedEnd);
   },
 
   setKitName: (name) => {

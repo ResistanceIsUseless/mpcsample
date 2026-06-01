@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useRef } from "react";
 import "../styles/controls.css";
 import { useMPCStore } from "../state/store";
 import type { KnobName } from "../types/mpc.types";
@@ -63,20 +63,6 @@ export function Knob({ name, label, size = "md", variant = "silver" }: KnobProps
     dragStartY.current = null;
   }, []);
 
-  // Wheel event needs passive: false, so attach imperatively
-  useEffect(() => {
-    const el = capRef.current;
-    if (!el) return;
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const delta = e.deltaY * -0.001;
-      const cur = useMPCStore.getState().knobs[name];
-      const next = isContinuous ? cur + delta : clamp01(cur + delta);
-      setKnob(name, next);
-    };
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
-  }, [isContinuous, name, setKnob]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
