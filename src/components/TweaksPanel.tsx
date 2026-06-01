@@ -26,6 +26,9 @@ export function TweaksPanel() {
   const autoOpenExportFolder = useMPCStore((s) => s.autoOpenExportFolder);
   const unmountAfterExport = useMPCStore((s) => s.unmountAfterExport);
   const visualizerMode = useMPCStore((s) => s.visualizerMode);
+  const midiStatus = useMPCStore((s) => s.midiStatus);
+  const midiInputs = useMPCStore((s) => s.midiInputs);
+  const preferredMidiDeviceName = useMPCStore((s) => s.preferredMidiDeviceName);
   const setVisualizerMode = useMPCStore((s) => s.setVisualizerMode);
   const setLedColor = useMPCStore((s) => s.setLedColor);
   const setMasterDb = useMPCStore((s) => s.setMasterDb);
@@ -34,6 +37,7 @@ export function TweaksPanel() {
   const setDialogPosition = useMPCStore((s) => s.setDialogPosition);
   const setAutoOpenExportFolder = useMPCStore((s) => s.setAutoOpenExportFolder);
   const setUnmountAfterExport = useMPCStore((s) => s.setUnmountAfterExport);
+  const setPreferredMidiDeviceName = useMPCStore((s) => s.setPreferredMidiDeviceName);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
@@ -308,6 +312,36 @@ export function TweaksPanel() {
             Unmount
           </button>
         </div>
+      </div>
+
+      {/* MIDI Device */}
+      <div className="tw-section">
+        <label htmlFor="tweaks-midi-device">MIDI Device</label>
+        {midiStatus === "unsupported" ? (
+          <span className="tw-hint">Web MIDI not supported in this browser</span>
+        ) : midiStatus === "denied" ? (
+          <span className="tw-hint">MIDI access denied</span>
+        ) : midiStatus === "idle" || midiStatus === "searching" ? (
+          <span className="tw-hint">Start the app to detect MIDI devices</span>
+        ) : midiInputs.length === 0 ? (
+          <span className="tw-hint">No MIDI devices connected</span>
+        ) : (
+          <select
+            id="tweaks-midi-device"
+            value={preferredMidiDeviceName ?? ""}
+            onChange={(e) =>
+              setPreferredMidiDeviceName(e.target.value === "" ? null : e.target.value)
+            }
+            aria-label="Select MIDI input device"
+          >
+            <option value="">Auto (first device)</option>
+            {midiInputs.map((inp) => (
+              <option key={inp.id} value={inp.name}>
+                {inp.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
     </div>
   );

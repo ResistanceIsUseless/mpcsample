@@ -17,6 +17,7 @@ type PersistedSettings = {
   autoOpenExportFolder: boolean;
   unmountAfterExport: boolean;
   visualizerMode: "waveform" | "fft" | "oscilloscope";
+  preferredMidiDeviceName: string | null;
 };
 
 function readSettings(): PersistedSettings {
@@ -25,6 +26,7 @@ function readSettings(): PersistedSettings {
     autoOpenExportFolder: false,
     unmountAfterExport: false,
     visualizerMode: "waveform" as const,
+    preferredMidiDeviceName: null,
   };
   if (typeof window === "undefined") return defaults;
   try {
@@ -46,6 +48,8 @@ function readSettings(): PersistedSettings {
         new Set(["waveform", "fft", "oscilloscope"]).has(parsed.visualizerMode)
           ? (parsed.visualizerMode as PersistedSettings["visualizerMode"])
           : "waveform",
+      preferredMidiDeviceName:
+        typeof parsed.preferredMidiDeviceName === "string" ? parsed.preferredMidiDeviceName : null,
     };
   } catch {
     return defaults;
@@ -172,6 +176,8 @@ type State = {
   bpm: number; // 60..180
   midiStatus: MidiStatus;
   midiDeviceName: string | null;
+  midiInputs: { id: string; name: string }[];
+  preferredMidiDeviceName: string | null;
   sampleName: string;
 
   /** Per-pad fetch/decode-in-progress flags for the loading indicator. */
@@ -298,6 +304,8 @@ type Actions = {
   setMasterDb: (db: number) => void;
   setBpm: (bpm: number) => void;
   setMidiStatus: (s: MidiStatus, deviceName?: string | null) => void;
+  setMidiInputs: (inputs: { id: string; name: string }[]) => void;
+  setPreferredMidiDeviceName: (name: string | null) => void;
   setSampleName: (s: string) => void;
 
   /**
@@ -408,6 +416,8 @@ export const useMPCStore = create<State & Actions>((set, get) => ({
   bpm: 120,
   midiStatus: "idle",
   midiDeviceName: null,
+  midiInputs: [],
+  preferredMidiDeviceName: _settingsInit.preferredMidiDeviceName,
   sampleName: "FULL LEVEL",
   loadingPads: {},
   isExporting: false,
@@ -667,6 +677,22 @@ export const useMPCStore = create<State & Actions>((set, get) => ({
     set({ midiStatus: s, midiDeviceName: deviceName ?? null });
   },
 
+  setMidiInputs: (inputs) => {
+    set({ midiInputs: inputs });
+  },
+
+  setPreferredMidiDeviceName: (name) => {
+    const { dialogPosition, autoOpenExportFolder, unmountAfterExport, visualizerMode } = get();
+    writeSettings({
+      dialogPosition,
+      autoOpenExportFolder,
+      unmountAfterExport,
+      visualizerMode,
+      preferredMidiDeviceName: name,
+    });
+    set({ preferredMidiDeviceName: name });
+  },
+
   setSampleName: (s) => set({ sampleName: s }),
 
   setUiScale: (scale) => {
@@ -703,35 +729,51 @@ export const useMPCStore = create<State & Actions>((set, get) => ({
   },
 
   setDialogPosition: (pos) => {
-    const { autoOpenExportFolder, unmountAfterExport, visualizerMode } = get();
+    const { autoOpenExportFolder, unmountAfterExport, visualizerMode, preferredMidiDeviceName } =
+      get();
     writeSettings({
       dialogPosition: pos,
       autoOpenExportFolder,
       unmountAfterExport,
       visualizerMode,
+      preferredMidiDeviceName,
     });
     set({ dialogPosition: pos });
   },
 
   setAutoOpenExportFolder: (v) => {
-    const { dialogPosition, unmountAfterExport, visualizerMode } = get();
-    writeSettings({ dialogPosition, autoOpenExportFolder: v, unmountAfterExport, visualizerMode });
+    const { dialogPosition, unmountAfterExport, visualizerMode, preferredMidiDeviceName } = get();
+    writeSettings({
+      dialogPosition,
+      autoOpenExportFolder: v,
+      unmountAfterExport,
+      visualizerMode,
+      preferredMidiDeviceName,
+    });
     set({ autoOpenExportFolder: v });
   },
 
   setUnmountAfterExport: (v) => {
-    const { dialogPosition, autoOpenExportFolder, visualizerMode } = get();
-    writeSettings({ dialogPosition, autoOpenExportFolder, unmountAfterExport: v, visualizerMode });
+    const { dialogPosition, autoOpenExportFolder, visualizerMode, preferredMidiDeviceName } = get();
+    writeSettings({
+      dialogPosition,
+      autoOpenExportFolder,
+      unmountAfterExport: v,
+      visualizerMode,
+      preferredMidiDeviceName,
+    });
     set({ unmountAfterExport: v });
   },
 
   setVisualizerMode: (mode) => {
-    const { dialogPosition, autoOpenExportFolder, unmountAfterExport } = get();
+    const { dialogPosition, autoOpenExportFolder, unmountAfterExport, preferredMidiDeviceName } =
+      get();
     writeSettings({
       dialogPosition,
       autoOpenExportFolder,
       unmountAfterExport,
       visualizerMode: mode,
+      preferredMidiDeviceName,
     });
     set({ visualizerMode: mode });
   },

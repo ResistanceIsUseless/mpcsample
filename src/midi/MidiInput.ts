@@ -1,9 +1,9 @@
-import { useMPCStore } from "../state/store";
 import type { MidiEvent, MidiStatus, PadIndex } from "../types/mpc.types";
 
 export type MidiHandlers = {
   onEvent?: (event: MidiEvent) => void;
   onStatusChange?: (status: MidiStatus, deviceName: string | null) => void;
+  onInputsChange?: (inputs: { id: string; name: string }[]) => void;
 };
 
 /**
@@ -13,17 +13,18 @@ export type MidiHandlers = {
  * - No devices connected → 'no-devices'
  * - Hot-plug / hot-unplug via onstatechange
  *
- * MIDI note mapping (standard Akai MPC convention):
- *   Notes 36–51 → local pad indices 0–15 within the ACTIVE bank.
- *   Global pad index = bankIdx * 16 + (note - 36).
- *   bankIdx is read from the store at event time so switching banks in the
- *   UI is immediately reflected for incoming MIDI.
+ * MIDI note mapping (Akai MPC Sample convention):
+ *   The device transmits: note = (36 + globalPadIdx) mod 128
+ *   Banks G and H wrap below 36 due to the mod-128 rollover.
+ *   Invert: globalPadIdx = (note - 36 + 128) & 0x7f
+ *   This is bank-agnostic — no store read required for pad mapping.
  */
 export class MidiInput {
   private access: MIDIAccess | null = null;
   private handlers: MidiHandlers = {};
   private boundOnMessage: (e: MIDIMessageEvent) => void;
   private status: MidiStatus = "idle";
+  private preferredDeviceName: string | null = null;
 
   constructor(handlers?: MidiHandlers) {
     this.handlers = handlers ?? {};
@@ -61,6 +62,12 @@ export class MidiInput {
     this.access.onstatechange = null;
     this.access = null;
     this.setStatus("idle", null);
+    this.handlers.onInputsChange?.([]);
+  }
+
+  setPreferredDevice(name: string | null): void {
+    this.preferredDeviceName = name;
+    this.bindInputs();
   }
 
   private bindInputs(): void {
@@ -69,14 +76,27 @@ export class MidiInput {
     this.access.inputs.forEach((inp) => {
       inputs.push(inp);
     });
+
+    this.handlers.onInputsChange?.(
+      inputs.map((inp) => ({ id: inp.id, name: inp.name ?? "Unknown" })),
+    );
+
     if (inputs.length === 0) {
       this.setStatus("no-devices", null);
       return;
     }
+
+    // Priority: explicit user preference → "MPC Sample" → first device.
+    const target =
+      this.preferredDeviceName !== null
+        ? (inputs.find((inp) => inp.name === this.preferredDeviceName) ?? inputs[0])
+        : (inputs.find((inp) => inp.name?.toLowerCase() === "mpc sample") ?? inputs[0]);
+
     inputs.forEach((inp) => {
-      inp.onmidimessage = this.boundOnMessage;
+      inp.onmidimessage = inp === target ? this.boundOnMessage : null;
     });
-    this.setStatus("connected", inputs[0].name ?? "Unknown");
+
+    this.setStatus("connected", target.name ?? "Unknown");
   }
 
   private setStatus(status: MidiStatus, deviceName: string | null): void {
@@ -97,29 +117,23 @@ export class MidiInput {
     const vel = e.data.length >= 3 ? (e.data[2] ?? 0) : 0;
     const cmd = statusByte & 0xf0;
 
+    // MPC Sample transmits: note = (36 + globalPadIdx) mod 128
+    // Invert to recover globalPadIdx for all 8 banks (including the
+    // mod-128 wrap-around that occurs in banks F–H).
+    const globalIdx = ((note - 36 + 128) & 0x7f) as PadIndex;
+
     if (cmd === 0x90 && vel > 0) {
-      // Note On with velocity — map to global pad index using active bank.
-      const localIdx = note - 36;
-      if (localIdx >= 0 && localIdx < 16) {
-        const bankIdx = useMPCStore.getState().bankIdx;
-        const globalIdx = (bankIdx * 16 + localIdx) as PadIndex;
-        this.handlers.onEvent?.({
-          type: "noteOn",
-          padIdx: globalIdx,
-          velocity: vel / 127,
-        });
-      }
+      this.handlers.onEvent?.({
+        type: "noteOn",
+        padIdx: globalIdx,
+        velocity: vel / 127,
+      });
     } else if (cmd === 0x80 || (cmd === 0x90 && vel === 0)) {
       // Note Off (0x80) or Note On with vel=0 (running status note-off).
-      const localIdx = note - 36;
-      if (localIdx >= 0 && localIdx < 16) {
-        const bankIdx = useMPCStore.getState().bankIdx;
-        const globalIdx = (bankIdx * 16 + localIdx) as PadIndex;
-        this.handlers.onEvent?.({
-          type: "noteOff",
-          padIdx: globalIdx,
-        });
-      }
+      this.handlers.onEvent?.({
+        type: "noteOff",
+        padIdx: globalIdx,
+      });
     } else if (cmd === 0xb0) {
       // Control Change
       this.handlers.onEvent?.({
