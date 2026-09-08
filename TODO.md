@@ -17,9 +17,10 @@ Working branch: `feature/sample-library-browser` (also carries the MIDI work bel
 
 - Step sequencer follow-ups (2026-09-07): pattern now **persists to localStorage** (`mpc.sequencerPattern`, survives reload — see `sequencerStore.ts`'s `readPersistedPattern`/`writePersistedPattern` + a `subscribe()` that writes on every pattern change, transient `isPlaying`/`currentStep` excluded). Added **per-step velocity editing**: scroll up/down on an active step cell to raise/lower its velocity (0.1 increments, floor 0.1), with opacity scaling to show velocity visually.
 
+- **Native `.xpj` sequence export** (2026-09-07) — the step sequencer pattern now exports into the project's real, editable native sequence data (not just live/MIDI playback). Reverse-engineered the event schema from a real recorded `.xpj` (note events live at `sequences[].value.trackClipMaps[0][entryIdx].value.eventList.events`, keyed per-track, 960 ticks/beat, `note.note = padIdx + 36`, `note.velocity` 0..1 — see `src/xpj/buildSequence.ts`). Wired into the existing kit-export pipeline (`buildXpj`/`buildProjectArtifacts`/`exportKitToZip`/`exportKitToDisk`) via an optional `pattern` param, and into `ExportButton.tsx` as an "Include step sequencer pattern" checkbox (shown only when the current pattern has active steps). Writes into a reserved sequence slot (`key === 0`); one pattern at a time, no song-mode export.
+
 ## Planned
 
-- **Native `.xpj` sequence export** — the step sequencer is currently live/MIDI-driven only. `.xpj`'s own `sequences[]`/`seqEventList` structure is real (confirmed in `src/xpj/template.skeleton.json`, includes a `stepSequencerBehaviour` field) but the event schema is undocumented/empty in every fixture we have. Needs a real pattern recorded on the hardware and exported, then inspected, before this can be built accurately.
 - Sample-accurate MIDI-out timing for the sequencer (v1 sends MIDI immediately per step rather than clock-aligned — a few ms of jitter, documented as a known v1 limitation).
 - Multiple saved patterns / song mode (currently one in-memory-and-persisted pattern at a time).
 - Swing/groove control.

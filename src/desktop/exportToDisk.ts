@@ -22,6 +22,7 @@
  */
 
 import type { SampleKit } from "../kits/kit.types";
+import type { Pattern } from "../sequencer/sequencer.types";
 import { buildProjectArtifacts, type ExportProgress } from "../xpj/exportKit";
 import { desktop } from "./bridge";
 import type { WriteProjectResult } from "./bridge.types";
@@ -35,6 +36,7 @@ type ExportToDiskOpts = {
    * If omitted, EEXIST errors propagate unchanged.
    */
   onNeedOverwrite?: (projectName: string) => Promise<boolean>;
+  pattern?: Pattern;
 };
 
 function hasCode(err: unknown): err is { code: string; message: string } {
@@ -62,10 +64,10 @@ export async function exportKitToDisk(
   userSamples: Map<string, Uint8Array>,
   opts: ExportToDiskOpts = {},
 ): Promise<WriteProjectResult> {
-  const { signal, onProgress, onNeedOverwrite } = opts;
+  const { signal, onProgress, onNeedOverwrite, pattern } = opts;
 
   // ── Build artifacts (fetching + building phases) ─────────────────────────
-  const built = await buildProjectArtifacts(kit, userSamples, { signal, onProgress });
+  const built = await buildProjectArtifacts(kit, userSamples, { signal, onProgress, pattern });
 
   // ── Resolve destination directory ─────────────────────────────────────────
   const def = await desktop().getDefaultExportDir();
