@@ -4,7 +4,7 @@
   position: fixed;
   left: 50%;
   bottom: 16px;
-  transform: translate(-50%, calc(100% + 24px));
+  transform: translate(-50%, calc(100% + 24px)) translate(var(--drag-x, 0px), var(--drag-y, 0px));
   z-index: 60;
   width: min(720px, calc(100vw - 32px));
   max-height: 60vh;
@@ -19,7 +19,11 @@
 }
 
 .step-sequencer.open {
-  transform: translate(-50%, 0);
+  transform: translate(-50%, 0) translate(var(--drag-x, 0px), var(--drag-y, 0px));
+}
+
+.step-sequencer.dragging {
+  transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

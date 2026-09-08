@@ -18,6 +18,7 @@ type PersistedSettings = {
   autoOpenExportFolder: boolean;
   unmountAfterExport: boolean;
   visualizerMode: "waveform" | "fft" | "oscilloscope";
+  hudVisible: boolean;
 };
 
 function readSettings(): PersistedSettings {
@@ -26,6 +27,7 @@ function readSettings(): PersistedSettings {
     autoOpenExportFolder: false,
     unmountAfterExport: false,
     visualizerMode: "waveform" as const,
+    hudVisible: true,
   };
   if (typeof window === "undefined") return defaults;
   try {
@@ -47,6 +49,7 @@ function readSettings(): PersistedSettings {
         new Set(["waveform", "fft", "oscilloscope"]).has(parsed.visualizerMode)
           ? (parsed.visualizerMode as PersistedSettings["visualizerMode"])
           : "waveform",
+      hudVisible: typeof parsed.hudVisible === "boolean" ? parsed.hudVisible : true,
     };
   } catch {
     return defaults;
@@ -214,6 +217,9 @@ type State = {
   /** Visualizer mode: static sample waveform (default), FFT spectrum, or oscilloscope. */
   visualizerMode: "waveform" | "fft" | "oscilloscope";
 
+  /** Whether the bottom-left HUD (shortcuts/status/toolbar) is shown. Default true. */
+  hudVisible: boolean;
+
   /** GlobalPadIdx of the most recently triggered pad; drives the waveform display. */
   lastTriggeredPad: PadIndex | null;
 };
@@ -356,6 +362,9 @@ type Actions = {
 
   /** Set the visualizer mode and persist to localStorage. */
   setVisualizerMode: (mode: "waveform" | "fft" | "oscilloscope") => void;
+
+  /** Show/hide the bottom-left HUD and persist to localStorage. */
+  setHudVisible: (v: boolean) => void;
 };
 
 /** Build a 128-entry visual-state record initialised to "armed". */
@@ -435,6 +444,7 @@ export const useMPCStore = create<State & Actions>((set, get) => ({
   autoOpenExportFolder: _settingsInit.autoOpenExportFolder,
   unmountAfterExport: _settingsInit.unmountAfterExport,
   visualizerMode: _settingsInit.visualizerMode,
+  hudVisible: _settingsInit.hudVisible,
   lastTriggeredPad: null,
 
   setStarted: (v) => set({ isStarted: v }),
@@ -723,37 +733,63 @@ export const useMPCStore = create<State & Actions>((set, get) => ({
   },
 
   setDialogPosition: (pos) => {
-    const { autoOpenExportFolder, unmountAfterExport, visualizerMode } = get();
+    const { autoOpenExportFolder, unmountAfterExport, visualizerMode, hudVisible } = get();
     writeSettings({
       dialogPosition: pos,
       autoOpenExportFolder,
       unmountAfterExport,
       visualizerMode,
+      hudVisible,
     });
     set({ dialogPosition: pos });
   },
 
   setAutoOpenExportFolder: (v) => {
-    const { dialogPosition, unmountAfterExport, visualizerMode } = get();
-    writeSettings({ dialogPosition, autoOpenExportFolder: v, unmountAfterExport, visualizerMode });
+    const { dialogPosition, unmountAfterExport, visualizerMode, hudVisible } = get();
+    writeSettings({
+      dialogPosition,
+      autoOpenExportFolder: v,
+      unmountAfterExport,
+      visualizerMode,
+      hudVisible,
+    });
     set({ autoOpenExportFolder: v });
   },
 
   setUnmountAfterExport: (v) => {
-    const { dialogPosition, autoOpenExportFolder, visualizerMode } = get();
-    writeSettings({ dialogPosition, autoOpenExportFolder, unmountAfterExport: v, visualizerMode });
+    const { dialogPosition, autoOpenExportFolder, visualizerMode, hudVisible } = get();
+    writeSettings({
+      dialogPosition,
+      autoOpenExportFolder,
+      unmountAfterExport: v,
+      visualizerMode,
+      hudVisible,
+    });
     set({ unmountAfterExport: v });
   },
 
   setVisualizerMode: (mode) => {
-    const { dialogPosition, autoOpenExportFolder, unmountAfterExport } = get();
+    const { dialogPosition, autoOpenExportFolder, unmountAfterExport, hudVisible } = get();
     writeSettings({
       dialogPosition,
       autoOpenExportFolder,
       unmountAfterExport,
       visualizerMode: mode,
+      hudVisible,
     });
     set({ visualizerMode: mode });
+  },
+
+  setHudVisible: (v) => {
+    const { dialogPosition, autoOpenExportFolder, unmountAfterExport, visualizerMode } = get();
+    writeSettings({
+      dialogPosition,
+      autoOpenExportFolder,
+      unmountAfterExport,
+      visualizerMode,
+      hudVisible: v,
+    });
+    set({ hudVisible: v });
   },
 }));
 

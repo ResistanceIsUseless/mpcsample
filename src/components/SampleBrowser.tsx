@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/library.css";
 import type { LibraryEntry } from "../desktop/bridge.types";
+import { useDraggablePanel } from "../hooks/useDraggablePanel";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { deriveAutoTags, derivePackName, effectiveTags } from "../library/autoTags";
 import { entryFolder, LIBRARY_DRAG_MIME, librarySampleUrl } from "../library/library.types";
@@ -371,8 +372,12 @@ export function SampleBrowser() {
           ? "Scan failed"
           : "No folder chosen";
 
-  const panelClass = `sample-browser${open ? " open" : ""}`;
-  const style: React.CSSProperties = prefersReducedMotion ? { transition: "none" } : {};
+  const drag = useDraggablePanel(panelRef);
+  const panelClass = `sample-browser${open ? " open" : ""}${drag.className}`;
+  const style: React.CSSProperties = {
+    ...(prefersReducedMotion ? { transition: "none" } : {}),
+    ...drag.style,
+  };
 
   return (
     <div
@@ -385,7 +390,7 @@ export function SampleBrowser() {
       onKeyDown={handleKeyDown}
       onClick={(e) => e.stopPropagation()}
     >
-      <header>
+      <header {...drag.headerProps}>
         <h3 id="sample-browser-heading">SAMPLE LIBRARY</h3>
         <button
           ref={closeBtnRef}

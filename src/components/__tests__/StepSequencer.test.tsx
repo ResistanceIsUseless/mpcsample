@@ -131,3 +131,46 @@ describe("StepSequencer — scroll-to-adjust velocity", () => {
     expect(useSequencerStore.getState().pattern.steps[0]?.[0].velocity).toBeCloseTo(0.1);
   });
 });
+
+describe("StepSequencer — drag to reposition", () => {
+  function getHeader(): HTMLElement {
+    const heading = screen.getByRole("heading", { name: "STEP SEQUENCER" });
+    const header = heading.closest("header");
+    if (!header) throw new Error("header not found");
+    return header;
+  }
+
+  it("moves the panel via its header and resets on double-click", () => {
+    render(<StepSequencer />);
+    openSequencer();
+
+    const header = getHeader();
+    const panel = header.parentElement as HTMLElement;
+
+    fireEvent.pointerDown(header, { clientX: 100, clientY: 100, pointerId: 1 });
+    fireEvent.pointerMove(header, { clientX: 150, clientY: 130, pointerId: 1 });
+    fireEvent.pointerUp(header, { pointerId: 1 });
+
+    expect(panel.style.getPropertyValue("--drag-x")).not.toBe("");
+    expect(panel.className).toContain("moved");
+
+    fireEvent.doubleClick(header);
+
+    expect(panel.style.getPropertyValue("--drag-x")).toBe("");
+    expect(panel.className).not.toContain("moved");
+  });
+
+  it("does not start a drag from the header's close button", () => {
+    render(<StepSequencer />);
+    openSequencer();
+
+    const header = getHeader();
+    const panel = header.parentElement as HTMLElement;
+    const closeBtn = screen.getByLabelText("Close step sequencer");
+
+    fireEvent.pointerDown(closeBtn, { clientX: 100, clientY: 100, pointerId: 1 });
+    fireEvent.pointerMove(header, { clientX: 150, clientY: 130, pointerId: 1 });
+
+    expect(panel.style.getPropertyValue("--drag-x")).toBe("");
+  });
+});

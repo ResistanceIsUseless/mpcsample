@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/sequencer.css";
 import { BANK_LABELS, localToGlobal } from "../data/padLayout";
+import { useDraggablePanel } from "../hooks/useDraggablePanel";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import {
   BEATS_PER_BAR,
@@ -168,8 +169,12 @@ export function StepSequencer() {
     [bankIdx, padMap],
   );
 
-  const panelClass = `step-sequencer${open ? " open" : ""}`;
-  const style: React.CSSProperties = prefersReducedMotion ? { transition: "none" } : {};
+  const drag = useDraggablePanel(panelRef);
+  const panelClass = `step-sequencer${open ? " open" : ""}${drag.className}`;
+  const style: React.CSSProperties = {
+    ...(prefersReducedMotion ? { transition: "none" } : {}),
+    ...drag.style,
+  };
 
   return (
     <div
@@ -182,7 +187,7 @@ export function StepSequencer() {
       onKeyDown={handleKeyDown}
       onClick={(e) => e.stopPropagation()}
     >
-      <header>
+      <header {...drag.headerProps}>
         <h3 id="step-sequencer-heading">STEP SEQUENCER</h3>
         <button
           ref={closeBtnRef}

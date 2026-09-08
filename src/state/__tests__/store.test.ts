@@ -735,3 +735,34 @@ describe("setVisualizerMode", () => {
     expect(useMPCStore.getState().visualizerMode).toBe("fft");
   });
 });
+
+// ── setHudVisible ────────────────────────────────────────────────────────────
+
+describe("setHudVisible", () => {
+  it("defaults to true", () => {
+    expect(useMPCStore.getState().hudVisible).toBe(true);
+  });
+
+  it("sets hudVisible to false", () => {
+    useMPCStore.getState().setHudVisible(false);
+    expect(useMPCStore.getState().hudVisible).toBe(false);
+  });
+
+  it("sets hudVisible back to true", () => {
+    useMPCStore.getState().setHudVisible(false);
+    useMPCStore.getState().setHudVisible(true);
+    expect(useMPCStore.getState().hudVisible).toBe(true);
+  });
+
+  it("does not clobber other persisted-setting fields when set", () => {
+    useMPCStore.getState().setVisualizerMode("fft");
+    useMPCStore.getState().setHudVisible(false);
+    expect(useMPCStore.getState().visualizerMode).toBe("fft");
+  });
+
+  it("is not clobbered by other persisted-setting setters", () => {
+    useMPCStore.getState().setHudVisible(false);
+    useMPCStore.getState().setVisualizerMode("oscilloscope");
+    expect(useMPCStore.getState().hudVisible).toBe(false);
+  });
+});

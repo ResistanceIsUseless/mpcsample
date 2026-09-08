@@ -14,12 +14,16 @@
   border-radius: 12px;
   font-family: "Barlow Condensed", sans-serif;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
-  transform: translateX(calc(100% + 24px));
+  transform: translateX(calc(100% + 24px)) translate(var(--drag-x, 0px), var(--drag-y, 0px));
   transition: transform 200ms ease;
 }
 
 .sample-browser.open {
-  transform: translateX(0);
+  transform: translateX(0) translate(var(--drag-x, 0px), var(--drag-y, 0px));
+}
+
+.sample-browser.dragging {
+  transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
