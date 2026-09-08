@@ -3,13 +3,16 @@ import { HUD } from "./components/HUD";
 import { KitEditor } from "./components/KitEditor";
 import { Launcher } from "./components/Launcher";
 import { MPCDevice } from "./components/MPCDevice";
+import { SampleBrowser } from "./components/SampleBrowser";
 import { StartOverlay } from "./components/StartOverlay";
+import { StepSequencer } from "./components/StepSequencer";
 import { TweaksPanel } from "./components/TweaksPanel";
 import { isDesktop } from "./desktop/bridge";
 import { useAudioEngine } from "./hooks/useAudioEngine";
 import { useKeyboardInput } from "./hooks/useKeyboardInput";
 import { useKitLoader } from "./hooks/useKitLoader";
 import { useMidiInput } from "./hooks/useMidiInput";
+import { useSequencer } from "./hooks/useSequencer";
 import { useMPCStore } from "./state/store";
 
 export function App() {
@@ -17,6 +20,7 @@ export function App() {
   const midi = useMidiInput();
   useKeyboardInput(true);
   useKitLoader(audio.isReady);
+  useSequencer();
 
   useEffect(() => {
     const handleStop = () => useMPCStore.getState().stopAll();
@@ -42,6 +46,8 @@ export function App() {
       <HUD />
       <TweaksPanel />
       <KitEditor />
+      <StepSequencer />
+      {isDesktop() && <SampleBrowser />}
     </>
   );
 }

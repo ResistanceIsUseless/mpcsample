@@ -3,7 +3,7 @@
 // computed keys ({ [12]: ... }) mirror global pad indices for fixture clarity.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SampleKit, SamplePad } from "../../kits/kit.types";
-import type { AudioEngineLike } from "../../types/mpc.types";
+import type { AudioEngineLike, MidiOutputLike } from "../../types/mpc.types";
 import { _cancelAllReleaseTimers, buildExportKit, useMPCStore } from "../store";
 
 // ── Mock engine factory ────────────────────────────────────────────────────────
@@ -31,6 +31,14 @@ function makeEngine(): AudioEngineLike {
     isPadLoading: vi.fn(() => false),
     prefetchAll: vi.fn(() => Promise.resolve()),
     registerImportedSample: vi.fn(() => Promise.resolve()),
+  };
+}
+
+function makeMidiOut(): MidiOutputLike {
+  return {
+    hasOutput: vi.fn(() => true),
+    sendNoteOn: vi.fn(() => {}),
+    sendNoteOff: vi.fn(() => {}),
   };
 }
 
@@ -80,6 +88,7 @@ beforeEach(() => {
     isExporting: false,
     exportProgress: null,
     engineRef: null,
+    midiOutRef: null,
     bpm: 120,
     fader: 0.5,
     pads: Object.fromEntries(Array.from({ length: 128 }, (_, i) => [i, "armed"])) as Record<
@@ -641,6 +650,25 @@ describe("triggerPad", () => {
     useMPCStore.getState().triggerPad(0);
     expect(engine.trigger).toHaveBeenCalledWith(0, 0.9, undefined);
   });
+
+  it("sends a MIDI Note On via midiOutRef by default", () => {
+    const midiOut = makeMidiOut();
+    useMPCStore.setState({ midiOutRef: midiOut });
+    useMPCStore.getState().triggerPad(4, 0.6);
+    expect(midiOut.sendNoteOn).toHaveBeenCalledWith(4, 0.6);
+  });
+
+  it("does NOT send MIDI out when fromHardware=true (avoids echoing back to the device)", () => {
+    const midiOut = makeMidiOut();
+    useMPCStore.setState({ midiOutRef: midiOut });
+    useMPCStore.getState().triggerPad(4, 0.6, undefined, true);
+    expect(midiOut.sendNoteOn).not.toHaveBeenCalled();
+  });
+
+  it("works without a registered midiOutRef (no-op, no throw)", () => {
+    useMPCStore.setState({ midiOutRef: null });
+    expect(() => useMPCStore.getState().triggerPad(0)).not.toThrow();
+  });
 });
 
 // ── pressPad / unpressPad ─────────────────────────────────────────────────────
@@ -676,6 +704,20 @@ describe("releasePad", () => {
     await vi.runAllTimersAsync();
     expect(useMPCStore.getState().pads[0]).toBe("armed");
     vi.useRealTimers();
+  });
+
+  it("sends a MIDI Note Off via midiOutRef by default", () => {
+    const midiOut = makeMidiOut();
+    useMPCStore.setState({ midiOutRef: midiOut });
+    useMPCStore.getState().releasePad(4);
+    expect(midiOut.sendNoteOff).toHaveBeenCalledWith(4);
+  });
+
+  it("does NOT send MIDI out when fromHardware=true", () => {
+    const midiOut = makeMidiOut();
+    useMPCStore.setState({ midiOutRef: midiOut });
+    useMPCStore.getState().releasePad(4, true);
+    expect(midiOut.sendNoteOff).not.toHaveBeenCalled();
   });
 });
 
