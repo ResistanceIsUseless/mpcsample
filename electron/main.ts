@@ -32,6 +32,31 @@ import {
   shell,
 } from "electron";
 
+/**
+ * Enables macOS system-audio loopback capture for the sample recorder.
+ *
+ * Must run before `app.whenReady()` (Chromium feature switches only take
+ * effect if set before the app is ready) — `useSystemPicker`'s native macOS
+ * picker never actually returns an audio track (confirmed: Electron issue
+ * electron/electron#44685, still unresolved).
+ *
+ * The direct-grant approach (`audio: "loopback"` in `handleDisplayMediaRequest`
+ * below) initially returned a live-looking audio track that was actually dead
+ * (`readyState: "ended"`, zero signal, no error) — root-caused against
+ * electron/electron#49607: recent Chromium defaults to Apple's new CoreAudio
+ * Tap API (`MacCatapLoopbackAudioForScreenShare`, on by default) for macOS
+ * loopback capture, which requires a *different*, newly-introduced Info.plist
+ * key (`NSAudioCaptureUsageDescription`, added in `electron-builder.yml`) that
+ * almost nothing has yet — and when that's missing, Chromium fails silently
+ * with **no fallback** to the old, already-working
+ * `NSScreenCaptureUsageDescription`-gated method. Disabling the new path
+ * forces the proven fallback; `MacSckSystemAudioLoopbackOverride` additionally
+ * forces ScreenCaptureKit-based loopback within that fallback regardless of
+ * OS version.
+ */
+app.commandLine.appendSwitch("enable-features", "MacSckSystemAudioLoopbackOverride");
+app.commandLine.appendSwitch("disable-features", "MacCatapLoopbackAudioForScreenShare");
+
 const execFileAsync = promisify(execFile);
 
 import type {
@@ -224,14 +249,17 @@ function isAllowedPermission(permission: string): boolean {
  * Handles `navigator.mediaDevices.getDisplayMedia()` requests from the
  * renderer (the sample recorder's system/app-audio capture).
  *
- * On macOS 15+, `useSystemPicker: true` means this handler is never actually
- * invoked — the OS's own ScreenCaptureKit-backed picker (window/screen +
- * audio) handles selection natively, with no source-list UI of our own. This
- * body only runs as a fallback on platforms where the system picker isn't
- * available (older macOS, Windows) — best-effort only, not exercised on the
- * primary target (macOS 15+): grants the first available screen with no
- * audio track, since a real system-audio-loopback fallback would need
- * platform-specific handling we haven't built.
+ * Does NOT delegate to macOS's native system picker (`useSystemPicker`) —
+ * that never actually returns an audio track on macOS in this Electron
+ * version (electron/electron#44685, still open). Instead this grants a
+ * screen source for `video` (required by the API even though the recorder
+ * discards it) and `audio: "loopback"` directly, which — combined with the
+ * `MacLoopbackAudioForScreenShare`/`MacSckSystemAudioLoopbackOverride`
+ * feature flags enabled at the top of this file — captures real macOS
+ * system-audio loopback (whatever's audible through the Mac's output),
+ * confirmed working live. The tradeoff versus the (broken) native picker:
+ * no per-window source selection UI — it always captures system-wide audio,
+ * so whatever the user wants recorded should be the only thing playing.
  */
 function handleDisplayMediaRequest(
   _request: Electron.DisplayMediaRequestHandlerHandlerRequest,
@@ -239,7 +267,7 @@ function handleDisplayMediaRequest(
 ): void {
   desktopCapturer
     .getSources({ types: ["screen"] })
-    .then((sources) => callback({ video: sources[0] }))
+    .then((sources) => callback({ video: sources[0], audio: "loopback" }))
     .catch(() => callback({}));
 }
 
@@ -272,10 +300,9 @@ function createWindow(): void {
   );
 
   // Sample recorder: system/app-audio capture via getDisplayMedia (see
-  // `handleDisplayMediaRequest`'s doc comment for the useSystemPicker behavior).
-  mainWindow.webContents.session.setDisplayMediaRequestHandler(handleDisplayMediaRequest, {
-    useSystemPicker: true,
-  });
+  // `handleDisplayMediaRequest`'s doc comment for why this doesn't use the
+  // native system picker).
+  mainWindow.webContents.session.setDisplayMediaRequestHandler(handleDisplayMediaRequest);
 
   // CSP — applied for all navigation responses.
   mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {

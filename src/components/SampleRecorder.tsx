@@ -331,8 +331,9 @@ export function SampleRecorder() {
 
         {!take && !recording && (
           <p className="rec-hint">
-            Click Record, then pick a specific window (a browser tab, VLC, Plex — anything actually
-            playing audio) from macOS's picker. No virtual audio cable needed.
+            Click Record and it captures whatever's currently playing through your Mac's audio
+            output (a browser tab, VLC, Plex, ...) — no virtual audio cable needed. Since it's
+            system-wide, make sure only the thing you want to record is actually playing.
           </p>
         )}
       </div>

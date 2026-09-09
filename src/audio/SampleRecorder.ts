@@ -1,11 +1,16 @@
 /**
  * SampleRecorder.ts — System/app-audio capture engine for the sample recorder.
  *
- * Captures audio via `navigator.mediaDevices.getDisplayMedia()` — on this
- * app's primary target (macOS 15+, Electron's `useSystemPicker: true`, see
- * `electron/main.ts`), this triggers macOS's own ScreenCaptureKit-backed
- * picker, letting the user pick a specific window (a browser tab, VLC, Plex)
- * and capture just that window's audio. No virtual audio cable involved.
+ * Captures audio via `navigator.mediaDevices.getDisplayMedia()`. macOS's
+ * native system picker (`useSystemPicker`) was tried first but never
+ * actually returns an audio track in this Electron version — a confirmed,
+ * still-open Electron bug (electron/electron#44685). The working fix (see
+ * `electron/main.ts`'s `handleDisplayMediaRequest` and the
+ * `MacLoopbackAudioForScreenShare`/`MacSckSystemAudioLoopbackOverride`
+ * feature flags enabled there) grants real macOS system-audio loopback
+ * directly, with no picker UI at all — no virtual audio cable involved, but
+ * also no per-window selection: it captures whatever's currently audible
+ * through the Mac's output, system-wide.
  *
  * `video: true` is requested (and every video track immediately stopped) —
  * `getDisplayMedia` audio-only requests are unreliable across engines; video
@@ -58,14 +63,13 @@ export class SampleRecorder {
   }
 
   /**
-   * Prompt for a capture source (macOS's native picker on this app's
-   * primary target) and start accumulating audio. `onLevel` is called on
-   * every processing block with the current RMS level (0..~1) for a live
-   * meter.
+   * Start capturing macOS system-audio loopback (whatever's currently
+   * audible through the Mac's output) and accumulating it. `onLevel` is
+   * called on every processing block with the current RMS level (0..~1)
+   * for a live meter.
    *
-   * @throws {Error} If the user cancels the picker, or the selected source
-   *   has no audio track (e.g. they picked "Entire Screen" with nothing
-   *   audible, or a window that isn't producing sound).
+   * @throws {Error} If capture is denied (e.g. Screen & System Audio
+   *   Recording permission not granted), or nothing is actually playing.
    */
   async start(onLevel?: (rms: number) => void): Promise<void> {
     if (this.recording) return;
@@ -81,7 +85,7 @@ export class SampleRecorder {
     if (audioTracks.length === 0) {
       for (const track of displayStream.getTracks()) track.stop();
       throw new Error(
-        "The selected source has no audio track — pick a window or screen with audio actually playing.",
+        "No audio track was captured — make sure something is actually playing through your Mac's audio output, then try again.",
       );
     }
     this.stream = new MediaStream(audioTracks);
