@@ -77,7 +77,19 @@ export class SampleRecorder {
 
     const displayStream = await navigator.mediaDevices.getDisplayMedia({
       video: true,
-      audio: true,
+      // Chromium's `audio: true` shorthand defaults to
+      // echoCancellation/noiseSuppression/autoGainControl all `true` and
+      // channelCount to mono — voice-call DSP tuned for mic input, not
+      // system/app audio loopback. Applied to music/video it badly mangles
+      // quality (confirmed live via `track.getSettings()`: all three were on
+      // and channelCount was 1 despite stereo being available). Disable the
+      // voice processing and request real stereo explicitly.
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        channelCount: 2,
+      },
     });
     for (const track of displayStream.getVideoTracks()) track.stop();
 
