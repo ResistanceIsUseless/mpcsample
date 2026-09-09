@@ -4,6 +4,7 @@ import { KitEditor } from "./components/KitEditor";
 import { Launcher } from "./components/Launcher";
 import { MPCDevice } from "./components/MPCDevice";
 import { SampleBrowser } from "./components/SampleBrowser";
+import { SampleRecorder } from "./components/SampleRecorder";
 import { StartOverlay } from "./components/StartOverlay";
 import { StepSequencer } from "./components/StepSequencer";
 import { TweaksPanel } from "./components/TweaksPanel";
@@ -47,6 +48,7 @@ export function App() {
       <TweaksPanel />
       <KitEditor />
       <StepSequencer />
+      <SampleRecorder />
       {isDesktop() && <SampleBrowser />}
     </>
   );

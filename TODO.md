@@ -21,11 +21,15 @@ Working branch: `feature/sample-library-browser` (also carries the MIDI work bel
 
 - **Draggable panels + hideable HUD** (2026-09-08) — Sample Browser and Step Sequencer can now be dragged by their header to anywhere on screen (`src/hooks/useDraggablePanel.ts`; pointer-drag, matching the existing `Knob`/`PitchFader` idiom), double-click the header to reset to the docked position. Position isn't persisted across reload and dragging is disabled below the 480px mobile breakpoint. KitEditor intentionally left undragged. The bottom-left HUD (keyboard shortcuts/bank/MIDI status/toolbar) can now be hidden via a "HIDE" button, leaving a small always-visible restore tab in its place; `hudVisible` persists to `localStorage` alongside the other settings in `src/state/store.ts`.
 
+- **Record a sample from system/app audio** (2026-09-09) — no virtual audio cable needed. Uses Electron's `session.setDisplayMediaRequestHandler({ useSystemPicker: true })` (`electron/main.ts`) so the renderer's standard `getDisplayMedia({video:true, audio:true})` triggers macOS's own ScreenCaptureKit-backed picker — pick a specific window (a browser tab, VLC, Plex, ...) and capture just that window's audio. Recording taps a dedicated native `AudioContext` (NOT `Tone.getContext().rawContext` — that's actually Tone's `standardized-audio-context` wrapper, which doesn't implement `createScriptProcessor`; discovered live while testing, see the doc comment in `src/audio/SampleRecorder.ts`) via a `ScriptProcessorNode` routed through a muted gain node to avoid echoing the captured audio back out. Encoded to 16-bit PCM WAV by a new hand-rolled encoder (`src/audio/encodeWav.ts`, mirrors the existing hand-rolled WAV parsing in `electron/sampleLibrary.ts`). New `src/components/SampleRecorder.tsx` panel (opened via the repurposed "SAMPLE RECORD" button), reusing `useDraggablePanel`; after stop, shows a waveform preview + native playback control, and a 4×4 pad-picker grid to assign the take (v1 is click-to-assign, not drag-and-drop). Needs `NSScreenCaptureUsageDescription` in the packaged app's Info.plist (`electron-builder.yml`'s `mac.extendInfo`) — verified working end-to-end in `electron:dev` with a synthetic test signal; **not yet verified in the packaged build**, where the fresh bundle id may need its own permission grant (see the plan's verification notes).
+
 ## Planned
 
 - Sample-accurate MIDI-out timing for the sequencer (v1 sends MIDI immediately per step rather than clock-aligned — a few ms of jitter, documented as a known v1 limitation).
 - Multiple saved patterns / song mode (currently one in-memory-and-persisted pattern at a time).
 - Swing/groove control.
+- Drag-and-drop pad assignment for recorded samples (v1 is click-to-assign only).
+- Verify the sample recorder against the packaged (not just `electron:dev`) build — TCC screen-recording permission for the fresh `com.worldlinkstudio.mpcsample` bundle id is untested.
 
 ## Reference
 

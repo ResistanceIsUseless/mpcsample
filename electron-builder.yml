@@ -35,6 +35,8 @@ mac:
     - zip
   category: public.app-category.music
   identity: null
+  extendInfo:
+    NSScreenCaptureUsageDescription: "MPC Sample needs screen-recording access to capture audio from other apps (e.g. a browser tab, VLC, or Plex) when recording a sample."
 
 dmg:
   artifactName: ${productName}-${version}.${ext}

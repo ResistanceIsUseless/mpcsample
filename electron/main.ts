@@ -3,7 +3,9 @@
  *
  * Security model:
  * - contextIsolation: true, sandbox: true, nodeIntegration: false
- * - MIDI permissions granted (Web MIDI API); Web Audio requires no permission grant.
+ * - MIDI + display-capture permissions granted (Web MIDI API; getDisplayMedia
+ *   for the sample recorder's system/app-audio capture); Web Audio itself
+ *   requires no permission grant.
  * - CSP via onHeadersReceived: allows bundled assets, inline styles (Tailwind v4),
  *   data/blob URLs, and Google Fonts; `unsafe-eval` only in dev for Vite HMR.
  */
@@ -21,6 +23,7 @@ import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import {
   app,
   BrowserWindow,
+  desktopCapturer,
   dialog,
   ipcMain,
   nativeImage,
@@ -196,6 +199,39 @@ async function runLibraryScan(rootDir: string): Promise<LibraryEntry[]> {
   return initial;
 }
 
+/**
+ * Permissions granted to all windows/sessions: Web MIDI (device I/O) and
+ * display-capture (system/app-audio recording via `getDisplayMedia`, used by
+ * the sample recorder — see `setDisplayMediaRequestHandler` below). Web
+ * Audio itself needs no permission grant.
+ */
+function isAllowedPermission(permission: string): boolean {
+  return permission === "midi" || permission === "midiSysex" || permission === "display-capture";
+}
+
+/**
+ * Handles `navigator.mediaDevices.getDisplayMedia()` requests from the
+ * renderer (the sample recorder's system/app-audio capture).
+ *
+ * On macOS 15+, `useSystemPicker: true` means this handler is never actually
+ * invoked — the OS's own ScreenCaptureKit-backed picker (window/screen +
+ * audio) handles selection natively, with no source-list UI of our own. This
+ * body only runs as a fallback on platforms where the system picker isn't
+ * available (older macOS, Windows) — best-effort only, not exercised on the
+ * primary target (macOS 15+): grants the first available screen with no
+ * audio track, since a real system-audio-loopback fallback would need
+ * platform-specific handling we haven't built.
+ */
+function handleDisplayMediaRequest(
+  _request: Electron.DisplayMediaRequestHandlerHandlerRequest,
+  callback: (streams: Electron.Streams) => void,
+): void {
+  desktopCapturer
+    .getSources({ types: ["screen"] })
+    .then((sources) => callback({ video: sources[0] }))
+    .catch(() => callback({}));
+}
+
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: BASE_W,
@@ -216,13 +252,19 @@ function createWindow(): void {
     if (mainWindowRef === mainWindow) mainWindowRef = null;
   });
 
-  // Grant MIDI permissions (Web MIDI API) — Web Audio needs no permission.
+  // Grant MIDI + display-capture permissions — Web Audio needs no permission.
   mainWindow.webContents.session.setPermissionRequestHandler((_wc, permission, callback) => {
-    callback(permission === "midi" || permission === "midiSysex");
+    callback(isAllowedPermission(permission));
   });
-  mainWindow.webContents.session.setPermissionCheckHandler(
-    (_wc, permission) => permission === "midi" || permission === "midiSysex",
+  mainWindow.webContents.session.setPermissionCheckHandler((_wc, permission) =>
+    isAllowedPermission(permission),
   );
+
+  // Sample recorder: system/app-audio capture via getDisplayMedia (see
+  // `handleDisplayMediaRequest`'s doc comment for the useSystemPicker behavior).
+  mainWindow.webContents.session.setDisplayMediaRequestHandler(handleDisplayMediaRequest, {
+    useSystemPicker: true,
+  });
 
   // CSP — applied for all navigation responses.
   mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
@@ -558,12 +600,12 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window);
   });
 
-  // Ensure all windows share the MIDI permission policy set above.
+  // Ensure all windows share the permission policy set above.
   session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => {
-    callback(permission === "midi" || permission === "midiSysex");
+    callback(isAllowedPermission(permission));
   });
-  session.defaultSession.setPermissionCheckHandler(
-    (_wc, permission) => permission === "midi" || permission === "midiSysex",
+  session.defaultSession.setPermissionCheckHandler((_wc, permission) =>
+    isAllowedPermission(permission),
   );
 
   registerSampleProtocol();

@@ -17,6 +17,10 @@ export function UtilityButtons() {
     window.dispatchEvent(new Event("mpc:open-sequencer"));
   }, []);
 
+  const handleOpenSampleRecorder = useCallback(() => {
+    window.dispatchEvent(new Event("mpc:open-sample-recorder"));
+  }, []);
+
   const handleTapTempo = useCallback(() => {
     const now = Date.now();
     const taps = tapTimestamps.current;
@@ -81,7 +85,12 @@ export function UtilityButtons() {
 
       <div className="rec-row">
         <div className="btn-stack">
-          <button type="button" className="btn">
+          <button
+            type="button"
+            className="btn"
+            aria-label="Open sample recorder"
+            onClick={handleOpenSampleRecorder}
+          >
             SAMPLE
             <br />
             RECORD

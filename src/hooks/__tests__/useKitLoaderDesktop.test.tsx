@@ -123,6 +123,10 @@ vi.mock("../../components/StepSequencer", () => ({
   StepSequencer: () => <div data-testid="step-sequencer" />,
 }));
 
+vi.mock("../../components/SampleRecorder", () => ({
+  SampleRecorder: () => <div data-testid="sample-recorder" />,
+}));
+
 vi.mock("../../components/Launcher", () => ({
   Launcher: ({ onDismiss }: { onDismiss: () => void }) => (
     <div data-testid="launcher" role="dialog">
