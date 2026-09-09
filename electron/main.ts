@@ -201,12 +201,23 @@ async function runLibraryScan(rootDir: string): Promise<LibraryEntry[]> {
 
 /**
  * Permissions granted to all windows/sessions: Web MIDI (device I/O) and
- * display-capture (system/app-audio recording via `getDisplayMedia`, used by
- * the sample recorder — see `setDisplayMediaRequestHandler` below). Web
- * Audio itself needs no permission grant.
+ * display-capture + media (system/app-audio recording via `getDisplayMedia`,
+ * used by the sample recorder — see `setDisplayMediaRequestHandler` below).
+ *
+ * Both `"display-capture"` and `"media"` must be allowed: `"display-capture"`
+ * gates the `getDisplayMedia()` call itself, but Chromium *separately* checks
+ * `"media"` to actually grant use of the resulting audio track — confirmed by
+ * logging every permission check live, since denying only `"display-capture"`
+ * still failed every capture with a `NotAllowedError` and no useful message.
+ * Web Audio itself needs no permission grant.
  */
 function isAllowedPermission(permission: string): boolean {
-  return permission === "midi" || permission === "midiSysex" || permission === "display-capture";
+  return (
+    permission === "midi" ||
+    permission === "midiSysex" ||
+    permission === "display-capture" ||
+    permission === "media"
+  );
 }
 
 /**
