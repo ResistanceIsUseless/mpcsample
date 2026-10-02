@@ -5,7 +5,7 @@
  * then writes the unzipped `.xpj` + `_[ProjectData]/*.wav` directly to disk via
  * the `mpcDesktop` IPC bridge.
  *
- * Default destination: `/Volumes/MPC-SD/MPC-Sample/Projects` (SD card).
+ * Default destination: `MPC-Sample/Projects` on the mounted SD card (any volume name).
  * Fallback: native directory picker if the SD card is not mounted.
  * If the picker is cancelled, throws an `AbortError`.
  *

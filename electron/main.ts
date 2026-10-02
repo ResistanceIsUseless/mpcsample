@@ -73,7 +73,7 @@ import type {
 import { readProjectFromFile, writeProjectToDisk } from "./fsops";
 import type { IpcResult } from "./ipc";
 import { CH, LIBRARY_PROGRESS_EVENT } from "./ipc";
-import { DEFAULT_EXPORT_DIR, getDefaultExportDir, VOLUME_ROOT } from "./paths";
+import { DEFAULT_EXPORT_DIR, findSdVolume, getDefaultExportDir, VOLUME_ROOT } from "./paths";
 import {
   decodeSampleMeta,
   diffAgainstCache,
@@ -418,7 +418,7 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle(CH.ejectVolume, async (): Promise<IpcResult<undefined>> => {
     try {
-      await execFileAsync("diskutil", ["eject", VOLUME_ROOT]);
+      await execFileAsync("diskutil", ["eject", (await findSdVolume()) ?? VOLUME_ROOT]);
       return ok(undefined);
     } catch (err) {
       return fail(err);

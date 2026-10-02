@@ -5,7 +5,11 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { desktop, isDesktop } from "../desktop/bridge";
+import type { LibraryEntry } from "../desktop/bridge.types";
 import { useLibraryStore } from "./libraryStore";
+
+/** How often buffered decode results are merged into the store. */
+const PROGRESS_FLUSH_MS = 250;
 
 type UseSampleLibraryResult = {
   /** Open a native folder picker and scan the chosen directory. No-op outside Electron. */
@@ -23,15 +27,30 @@ export function useSampleLibrary(): UseSampleLibraryResult {
 
   useEffect(() => {
     if (!isDesktop()) return;
+    // Progress arrives once per decoded file (tens of thousands for a big
+    // library) — buffer it and apply in one store update per flush so the
+    // entry list isn't rebuilt per file.
+    const pending = new Map<string, Partial<LibraryEntry>>();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const flush = () => {
+      timer = null;
+      if (pending.size === 0) return;
+      const batch = new Map(pending);
+      pending.clear();
+      useLibraryStore.getState().patchEntries(batch);
+    };
     unsubscribeRef.current = desktop().onLibraryProgress((update) => {
-      const store = useLibraryStore.getState();
       if (update.done) {
-        store.setScanStatus("ready");
+        if (timer) clearTimeout(timer);
+        flush();
+        useLibraryStore.getState().setScanStatus("ready");
         return;
       }
-      store.patchEntry(update.relPath, update.meta);
+      pending.set(update.relPath, update.meta);
+      if (!timer) timer = setTimeout(flush, PROGRESS_FLUSH_MS);
     });
     return () => {
+      if (timer) clearTimeout(timer);
       unsubscribeRef.current?.();
       unsubscribeRef.current = null;
     };

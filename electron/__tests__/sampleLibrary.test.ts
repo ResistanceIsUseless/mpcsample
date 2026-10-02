@@ -8,6 +8,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  DEFAULT_NUM_PEAK_POINTS,
   decodeSampleMeta,
   diffAgainstCache,
   type LibraryCache,
@@ -135,7 +136,7 @@ describe("decodeSampleMeta — WAV", () => {
     expect(meta.bitDepth).toBe(16);
     expect(meta.durationSec).toBeCloseTo(1, 2);
     expect(meta.peaks).not.toBeNull();
-    expect(meta.peaks).toHaveLength(600 * 2);
+    expect(meta.peaks).toHaveLength(DEFAULT_NUM_PEAK_POINTS * 2);
 
     // The ramp fixture goes from -1.0 to ~1.0 — first bucket min should be
     // near -1, last bucket max should be near 1.

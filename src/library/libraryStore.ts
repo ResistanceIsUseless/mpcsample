@@ -33,6 +33,8 @@ type LibraryActions = {
   setEntries: (entries: LibraryEntry[]) => void;
   /** Merge decoded metadata into the entry matching `relPath`. */
   patchEntry: (relPath: string, meta: Partial<LibraryEntry>) => void;
+  /** Merge many decoded-metadata updates in one pass (one state change, O(entries)). */
+  patchEntries: (updates: Map<string, Partial<LibraryEntry>>) => void;
   setFilterText: (text: string) => void;
   setError: (message: string | null) => void;
   setManualTags: (tags: Record<string, string[]>) => void;
@@ -55,6 +57,15 @@ const initialState: LibraryState = {
   tagFilter: null,
 };
 
+/**
+ * A file the scanner decoded but couldn't parse as audio (corrupt/not really a
+ * WAV/AIFF): decoding finished, yet there's no sample rate. Skipped files that
+ * are merely too large for peaks still report a real sample rate, so they stay.
+ */
+function isUnreadable(e: LibraryEntry): boolean {
+  return e.peaks !== undefined && e.sampleRate === 0;
+}
+
 export const useLibraryStore = create<LibraryState & LibraryActions>((set) => ({
   ...initialState,
 
@@ -62,11 +73,13 @@ export const useLibraryStore = create<LibraryState & LibraryActions>((set) => ({
 
   setScanStatus: (status) => set({ scanStatus: status }),
 
-  setEntries: (entries) =>
+  setEntries: (allEntries) => {
+    const entries = allEntries.filter((e) => !isUnreadable(e));
     set({
       entries,
       pendingDecodeCount: entries.filter((e) => e.peaks === undefined).length,
-    }),
+    });
+  },
 
   patchEntry: (relPath, meta) =>
     set((state) => {
@@ -78,8 +91,29 @@ export const useLibraryStore = create<LibraryState & LibraryActions>((set) => ({
       });
       if (!changed) return state;
       return {
-        entries,
+        entries: entries.filter((e) => !isUnreadable(e)),
         pendingDecodeCount: Math.max(0, state.pendingDecodeCount - 1),
+      };
+    }),
+
+  patchEntries: (updates) =>
+    set((state) => {
+      let patched = 0;
+      const entries: LibraryEntry[] = [];
+      for (const e of state.entries) {
+        const meta = updates.get(e.relPath);
+        if (!meta) {
+          entries.push(e);
+          continue;
+        }
+        patched++;
+        const next = { ...e, ...meta };
+        if (!isUnreadable(next)) entries.push(next);
+      }
+      if (patched === 0) return state;
+      return {
+        entries,
+        pendingDecodeCount: Math.max(0, state.pendingDecodeCount - patched),
       };
     }),
 

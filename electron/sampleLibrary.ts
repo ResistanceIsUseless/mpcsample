@@ -27,8 +27,12 @@ const AUDIO_EXTENSIONS = new Set([".wav", ".aif", ".aiff"]);
 /** Skip peak computation above this size — still browsable/playable/exportable. */
 const MAX_PEAKS_FILE_BYTES = 100 * 1024 * 1024;
 
-/** Number of min/max buckets in a computed waveform (kept small — thumbnail only). */
-const DEFAULT_NUM_PEAK_POINTS = 600;
+/**
+ * Number of min/max buckets in a computed waveform. The browser thumbnail is
+ * only 72px wide, so more points are wasted — and at 25k samples the old 600
+ * points produced a ~500 MB cache file that exceeded V8's max string length.
+ */
+const DEFAULT_NUM_PEAK_POINTS = 72;
 
 /** Plain filesystem facts about one audio file — cheap to obtain (a single `stat`). */
 export type LibraryFileStat = {
@@ -145,7 +149,9 @@ export function diffAgainstCache(
 
   for (const file of files) {
     const hit = cache?.files[file.relPath];
-    if (hit && hit.sizeBytes === file.sizeBytes && hit.mtimeMs === file.mtimeMs) {
+    // Peaks of a different length come from an older, larger format — re-decode.
+    const peaksCurrent = !hit?.peaks || hit.peaks.length === DEFAULT_NUM_PEAK_POINTS * 2;
+    if (hit && peaksCurrent && hit.sizeBytes === file.sizeBytes && hit.mtimeMs === file.mtimeMs) {
       cached.push({ ...file, ...hit });
     } else {
       toDecode.push(file);
@@ -399,8 +405,8 @@ async function computePeaks(
 
     const flush = (bucketIdx: number): void => {
       if (bucketMin === Infinity) return; // bucket saw no frames
-      peaks[bucketIdx * 2] = bucketMin;
-      peaks[bucketIdx * 2 + 1] = bucketMax;
+      peaks[bucketIdx * 2] = Math.round(bucketMin * 1000) / 1000;
+      peaks[bucketIdx * 2 + 1] = Math.round(bucketMax * 1000) / 1000;
       lastFilledBucket = bucketIdx;
       bucketMin = Infinity;
       bucketMax = -Infinity;
