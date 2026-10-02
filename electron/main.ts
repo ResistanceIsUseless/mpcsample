@@ -94,6 +94,9 @@ protocol.registerSchemesAsPrivileged([
       standard: false,
       secure: true,
       supportFetchAPI: true,
+      // The renderer is served from http://localhost (dev) / file:// (packaged),
+      // so fetch() of mpc-sample:// is cross-origin and needs CORS opted in.
+      corsEnabled: true,
       stream: true,
       bypassCSP: true,
     },
@@ -600,6 +603,7 @@ function registerSampleProtocol(): void {
         status: 206,
         headers: {
           "Content-Type": contentType,
+          "Access-Control-Allow-Origin": "*",
           "Content-Range": `bytes ${start}-${end}/${size}`,
           "Accept-Ranges": "bytes",
           "Content-Length": String(end - start + 1),
@@ -611,6 +615,7 @@ function registerSampleProtocol(): void {
       status: 200,
       headers: {
         "Content-Type": contentType,
+        "Access-Control-Allow-Origin": "*",
         "Accept-Ranges": "bytes",
         "Content-Length": String(size),
       },
