@@ -119,6 +119,10 @@ vi.mock("../../components/KitEditor", () => ({
   KitEditor: () => <div data-testid="kit-editor" />,
 }));
 
+vi.mock("../../components/EffectsRackPanel", () => ({
+  EffectsRackPanel: () => <div data-testid="effects-rack-panel" />,
+}));
+
 vi.mock("../../components/StepSequencer", () => ({
   StepSequencer: () => <div data-testid="step-sequencer" />,
 }));

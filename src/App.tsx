@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { EffectsRackPanel } from "./components/EffectsRackPanel";
 import { HUD } from "./components/HUD";
 import { KitEditor } from "./components/KitEditor";
 import { Launcher } from "./components/Launcher";
@@ -47,6 +48,7 @@ export function App() {
       <HUD />
       <TweaksPanel />
       <KitEditor />
+      <EffectsRackPanel />
       <StepSequencer />
       <SampleRecorder />
       {isDesktop() && <SampleBrowser />}

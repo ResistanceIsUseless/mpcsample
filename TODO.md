@@ -4,6 +4,9 @@ Working branch: `feature/sample-library-browser` (also carries the MIDI work bel
 
 ## Done
 
+- **Effects Rack (offline multi-effect chain)** (2026-10-02) — the hardware forces add-effect → resample → add-next-effect for every stacked effect, and firmware research turned up no MIDI/USB control surface over the effects engine to automate that loop remotely (see `~/dev/mpc-firmware-research/FINDINGS.md`: the device's richer `/api/v1` object-model API is real but gated behind on-device PIN pairing we can't complete from a connected computer). Worked around it in-app instead: `src/audio/effects.types.ts` (plain, serializable `EffectInstance` chain — filter/distortion/bitcrusher/chorus/delay/reverb) + `src/audio/effectsChain.ts` (`renderEffectsChain` builds the whole chain as Tone.js nodes inside one `Tone.Offline` pass and returns a finished `AudioBuffer`; `previewEffectsChain` shares the same node-building code on the realtime context so you can audition before committing). New `EffectsRackPanel.tsx`, opened via an "Effects…" button in `KitEditor`'s per-pad editor (`mpc:open-effects` event, mirrors the other `mpc:open-*` panels). Render re-encodes to WAV (`encodeWavPCM16`) and writes back onto the pad as a new `userSamples` entry (fresh `sampleId`, so no stale-buffer caching risk) — stack further chains by rendering again.
+
+
 - Sample Library Browser: scan/browse/preview/drag-to-pad for large local sample folders, offloaded to the Electron main process so it never blocks on huge libraries.
 - Sample tagging: pack facet (derived from folder structure) + auto-tag taxonomy from folder/filename keywords + manual tag editor, persisted separately from the scan cache.
 - Fixed playback of WAV files with a trailing RIFF `LIST`/`INFO` metadata chunk (FL Studio export quirk) — `mpc-sample://` protocol now serves only the header-declared audio-data range, not the raw file size.

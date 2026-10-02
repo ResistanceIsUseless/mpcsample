@@ -471,6 +471,21 @@ export function KitEditor() {
                   </div>
                 </div>
 
+                {/* Effects rack */}
+                <div className="ke-field">
+                  <button
+                    type="button"
+                    className="ke-move-btn"
+                    onClick={() =>
+                      window.dispatchEvent(
+                        new CustomEvent("mpc:open-effects", { detail: { padIdx: selectedPad } }),
+                      )
+                    }
+                  >
+                    Effects…
+                  </button>
+                </div>
+
                 {/* Move */}
                 <div className="ke-field">
                   <label htmlFor="ke-move-target">Move to pad (global 1–128)</label>
